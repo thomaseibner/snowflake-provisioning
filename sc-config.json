@@ -39,5 +39,6 @@
         "DEFAULT_SC_PARAMS" : {
 	    "DATA_RETENTION_TIME_IN_DAYS" : 1,
 	    "COMMENT" : "sf_create_obj created schema"
-        }
+        },
+        "AR_PREFIX"        : "_SC_"
 }

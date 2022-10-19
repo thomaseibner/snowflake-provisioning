@@ -11,5 +11,6 @@
         "DEFAULT_DB_PARAMS" : {
             "DATA_RETENTION_TIME_IN_DAYS" : "1",
 	    "COMMENT" : "sf_create_obj created Database"
-	}
+	},
+        "AR_PREFIX"        : "_DB_"
 }

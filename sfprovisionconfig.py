@@ -50,6 +50,9 @@ class SfProvisionConfig():
             if 'ROLE_OWNER' not in cfg.config:
                 print("Missing ROLE_OWNER in configuration file: {cfg.filename}")
                 raise ValueError
+            if 'AR_PREFIX' not in cfg.config:
+                print("Missing AR_PREFIX in configuration file: {cfg.filename}")
+                raise ValueError
             # Basic checking of ROLE_HIERARCHY matching ROLE_PERMISSIONS
             for role in cfg.config['ROLE_HIERARCHY']:
                 if role not in cfg.config['ROLE_PERMISSIONS']:
@@ -151,15 +154,17 @@ class SfProvisionConfig():
     def create_db_roles(self):
         cfg = self.db
         cmdline = self.cmdline
+        ar_db_prefix = cfg.config['AR_PREFIX']
         for role_type in cfg.config['ROLE_HIERARCHY'][::-1]:
-            ar_role = f"{cmdline.db_nm}_{role_type}_AR"
+            ar_role = f"{ar_db_prefix}{cmdline.db_nm}_{role_type}_AR"
             self.create_role(ar_role)
 
     def create_db_grants(self):
         cfg = self.db
         cmdline = self.cmdline
+        ar_db_prefix = cfg.config['AR_PREFIX']
         for role_type in cfg.config['ROLE_HIERARCHY'][::-1]:
-            ar_role = f"{cmdline.db_nm}_{role_type}_AR"
+            ar_role = f"{ar_db_prefix}{cmdline.db_nm}_{role_type}_AR"
             type_grants = cfg.config['ROLE_PERMISSIONS'][role_type]
             for privilege in type_grants.keys():
                 for object in type_grants[privilege]:
@@ -175,14 +180,15 @@ class SfProvisionConfig():
         cfg = self.db
         cmdline = self.cmdline
         role_hierarchy = cfg.config['ROLE_HIERARCHY']
+        ar_db_prefix = cfg.config['AR_PREFIX']
         hierarchy_length = len(role_hierarchy)
         hierarchy_length = hierarchy_length - 1;
         for role_num in range(hierarchy_length)[::-1]:
-            lower_ar_role = f"{cmdline.db_nm}_{role_hierarchy[role_num+1]}_AR"
-            higher_ar_role = f"{cmdline.db_nm}_{role_hierarchy[role_num]}_AR"
+            lower_ar_role = f"{ar_db_prefix}{cmdline.db_nm}_{role_hierarchy[role_num+1]}_AR"
+            higher_ar_role = f"{ar_db_prefix}{cmdline.db_nm}_{role_hierarchy[role_num]}_AR"
             self.grant_r2r(lower_ar_role, higher_ar_role)
             # Grant the highest level role to 'ROLE_OWNER'
-        self.grant_r2r(f"{cmdline.db_nm}_{role_hierarchy[0]}_AR", cfg.config['ROLE_OWNER'])
+        self.grant_r2r(f"{ar_db_prefix}{cmdline.db_nm}_{role_hierarchy[0]}_AR", cfg.config['ROLE_OWNER'])
             
     def create_sc(self):
         cfg = self.sc
@@ -221,17 +227,20 @@ class SfProvisionConfig():
     def create_sc_roles(self):
         cfg = self.sc
         cmdline = self.cmdline
+        ar_sc_prefix = cfg.config['AR_PREFIX']
         for role_type in cfg.config['ROLE_HIERARCHY'][::-1]:
-            ar_role = f"{cmdline.db_nm}_{cmdline.sc_nm}_{role_type}_AR"
+            ar_role = f"{ar_sc_prefix}{cmdline.db_nm}_{cmdline.sc_nm}_{role_type}_AR"
             self.create_role(ar_role)
 
     def create_sc_grants(self):
         cfg = self.sc
         cmdline = self.cmdline
+        ar_sc_prefix = cfg.config['AR_PREFIX']
+        ar_db_prefix = self.db.config['AR_PREFIX']
         once = 1
         for role_type in cfg.config['ROLE_HIERARCHY'][::-1]:
-            ar_role = f"{cmdline.db_nm}_{cmdline.sc_nm}_{role_type}_AR"
-            db_ar_role = f"{cmdline.db_nm}_{role_type}_AR"
+            ar_role = f"{ar_sc_prefix}{cmdline.db_nm}_{cmdline.sc_nm}_{role_type}_AR"
+            db_ar_role = f"{ar_db_prefix}{cmdline.db_nm}_{role_type}_AR"
             if (once == 1):
                 # One grant at the parent database level is enough for
                 # all the roles inheriting from this role to see the db
@@ -247,15 +256,16 @@ class SfProvisionConfig():
     def create_sc_r2r_grants(self):
         cfg = self.sc
         cmdline = self.cmdline
+        ar_sc_prefix = cfg.config['AR_PREFIX']
         role_hierarchy = cfg.config['ROLE_HIERARCHY']
         hierarchy_length = len(role_hierarchy)
         hierarchy_length = hierarchy_length - 1;
         for role_num in range(hierarchy_length)[::-1]:
-            lower_ar_role = f"{cmdline.db_nm}_{cmdline.sc_nm}_{role_hierarchy[role_num+1]}_AR"
-            higher_ar_role = f"{cmdline.db_nm}_{cmdline.sc_nm}_{role_hierarchy[role_num]}_AR"
+            lower_ar_role = f"{ar_sc_prefix}{cmdline.db_nm}_{cmdline.sc_nm}_{role_hierarchy[role_num+1]}_AR"
+            higher_ar_role = f"{ar_sc_prefix}{cmdline.db_nm}_{cmdline.sc_nm}_{role_hierarchy[role_num]}_AR"
             self.grant_r2r(lower_ar_role, higher_ar_role)
             # Grant the highest level role to 'ROLE_OWNER'
-        self.grant_r2r(f"{cmdline.db_nm}_{cmdline.sc_nm}_{role_hierarchy[0]}_AR", cfg.config['ROLE_OWNER']) 
+        self.grant_r2r(f"{ar_sc_prefix}{cmdline.db_nm}_{cmdline.sc_nm}_{role_hierarchy[0]}_AR", cfg.config['ROLE_OWNER']) 
             
     def create_wh(self):
         cfg = self.wh
@@ -290,15 +300,17 @@ class SfProvisionConfig():
     def create_wh_roles(self):
         cfg = self.wh
         cmdline = self.cmdline
+        ar_wh_prefix = cfg.config['AR_PREFIX']
         for role_type in cfg.config['ROLE_HIERARCHY'][::-1]:
-            ar_role = f"{cmdline.wh_nm}_{role_type}_AR"
+            ar_role = f"{ar_wh_prefix}{cmdline.wh_nm}_{role_type}_AR"
             self.create_role(ar_role)
 
     def create_wh_grants(self):
         cfg = self.wh
         cmdline = self.cmdline
+        ar_wh_prefix = cfg.config['AR_PREFIX']
         for role_type in cfg.config['ROLE_HIERARCHY'][::-1]:
-            ar_role = f"{cmdline.wh_nm}_{role_type}_AR"
+            ar_role = f"{ar_wh_prefix}{cmdline.wh_nm}_{role_type}_AR"
             type_grants = cfg.config['ROLE_PERMISSIONS'][role_type]
             for privilege in type_grants.keys():
                 for object in type_grants[privilege]:
@@ -307,15 +319,16 @@ class SfProvisionConfig():
     def create_wh_r2r_grants(self):
         cfg = self.wh
         cmdline = self.cmdline
+        ar_wh_prefix = cfg.config['AR_PREFIX']
         role_hierarchy = cfg.config['ROLE_HIERARCHY']
         hierarchy_length = len(role_hierarchy)
         hierarchy_length = hierarchy_length - 1;
         for role_num in range(hierarchy_length)[::-1]:
-            lower_ar_role = f"{cmdline.wh_nm}_{role_hierarchy[role_num+1]}_AR"
-            higher_ar_role = f"{cmdline.wh_nm}_{role_hierarchy[role_num]}_AR"
+            lower_ar_role = f"{ar_wh_prefix}{cmdline.wh_nm}_{role_hierarchy[role_num+1]}_AR"
+            higher_ar_role = f"{ar_wh_prefix}{cmdline.wh_nm}_{role_hierarchy[role_num]}_AR"
             self.grant_r2r(lower_ar_role, higher_ar_role)
         # Grant the highest level role to 'ROLE_OWNER'
-        self.grant_r2r(f"{cmdline.wh_nm}_{role_hierarchy[0]}_AR", cfg.config['ROLE_OWNER'])
+        self.grant_r2r(f"{ar_wh_prefix}{cmdline.wh_nm}_{role_hierarchy[0]}_AR", cfg.config['ROLE_OWNER'])
         
     def create_role(self, role):
         self.objects.append(f"CREATE ROLE IF NOT EXISTS {role};")
