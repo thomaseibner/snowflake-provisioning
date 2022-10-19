@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+
+from cmdlineparse import CmdlineParse
+from sfprovisionconfig import SfProvisionConfig
+import re
+
+# Documentation for Snowflake access control:
+#   https://docs.snowflake.com/en/user-guide/security-access-control-overview.html
+#   https://docs.snowflake.com/en/sql-reference/sql/grant-privilege.html
+
+# Future improvements:
+#   Clone database/schema
+#   Check length of AR role
+#   Implement postfix for DB/SC in AR role in case naming convention doesn't include DB/SC
+#   Implement actually applying changes
+
+# Load configuration for provisioning
+prov_cfg = SfProvisionConfig()
+# Validate the configuration
+try:
+    prov_cfg.validate_config()
+except ValueError:
+    print("Configuration problem exiting")
+    exit(-1)
+# Parse command line
+cmdline = CmdlineParse()
+# Join the configuration with cmdline arguments
+prov_cfg.apply_cmdline_args(cmdline)
+
+if cmdline.type == 'database':
+    prov_cfg.create_db()
+    prov_cfg.create_db_roles()
+    prov_cfg.create_db_grants()
+    prov_cfg.create_db_r2r_grants()
+    
+elif cmdline.type == 'schema':
+    prov_cfg.create_sc()
+    prov_cfg.create_sc_roles()
+    prov_cfg.create_sc_grants()
+    prov_cfg.create_sc_r2r_grants()
+
+elif cmdline.type == 'warehouse':
+    prov_cfg.create_wh()
+    prov_cfg.create_wh_roles()
+    prov_cfg.create_wh_grants()
+    prov_cfg.create_wh_r2r_grants()
+
+if 'sf_create_obj' in __file__:
+    prov_cfg.print_create()
+elif 'sf_drop_obj' in __file__:
+    prov_cfg.print_drop()

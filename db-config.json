@@ -1,0 +1,15 @@
+{
+	"TYPE"             : "DATABASE",
+	"ROLE_OWNER"       : "SYSADMIN",
+	"ROLE_HIERARCHY"   : [ "ADM", "RW", "RX", "RO" ],
+	"ROLE_PERMISSIONS" : {
+	                      "ADM" : { "ALL" : ["DATABASE"] },
+	                      "RW"  : { "MODIFY" : [] },
+	                      "RX"  : { "USAGE" : [] },
+	                      "RO"  : { "USAGE,MONITOR" : ["DATABASE"] }
+	},
+        "DEFAULT_DB_PARAMS" : {
+            "DATA_RETENTION_TIME_IN_DAYS" : "1",
+	    "COMMENT" : "sf_create_obj created Database"
+	}
+}

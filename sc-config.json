@@ -1,0 +1,43 @@
+{
+	"TYPE"             : "SCHEMA",
+	"ROLE_OWNER"       : "SYSADMIN",
+	"ROLE_HIERARCHY"   : [ "ADM", "RW", "RX", "RO" ],
+        "ROLE_PERMISSIONS" : {
+	                       "ADM" : { "ALL" : [ ] },
+	                       "RW"  : { "ALL" : [
+		                                   "TABLES",
+				                   "EXTERNAL TABLES",
+				                   "VIEWS",
+				                   "MATERIALIZED VIEWS",
+				                   "FILE FORMATS",
+				                   "STAGES",
+				                   "STREAMS",
+				                   "SEQUENCES",
+				                   "FUNCTIONS",
+				                   "PROCEDURES",
+				                   "TASKS"
+			                         ]
+				       },
+                               "RX"  : { 
+                                         "INSERT, UPDATE, TRUNCATE, DELETE, REFERENCES" : ["TABLES"],
+				         "READ, WRITE" : ["STAGES"], 
+				         "USAGE" : ["PROCEDURES"],
+					 "OPERATE" : ["TASKS"]
+                                       },
+                               "RO"  : {
+                                         "SELECT" : [
+				             "TABLES",
+					     "EXTERNAL TABLES",
+					     "VIEWS",
+					     "MATERIALIZED VIEWS"
+					            ], 
+				   "REFERENCES" : ["EXTERNAL TABLES","VIEWS"],
+  				   "USAGE"  : ["FILE FORMATS","FUNCTIONS","STAGES"],
+	                           "MONITOR" : ["TASKS"] 
+	                       }
+	},
+        "DEFAULT_SC_PARAMS" : {
+	    "DATA_RETENTION_TIME_IN_DAYS" : 1,
+	    "COMMENT" : "sf_create_obj created schema"
+        }
+}

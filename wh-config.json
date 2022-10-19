@@ -1,0 +1,25 @@
+{
+	"TYPE"              : "WAREHOUSE",
+	"ROLE_OWNER"        : "SYSADMIN",
+	"ROLE_HIERARCHY"    : [ "ADM", "MOD", "MON", "USE" ],
+        "ROLE_PERMISSIONS"  : {
+	                        "ADM" : { "ALL"            : [ "WAREHOUSE" ] },
+	                        "MOD" : { "MODIFY"         : [ "WAREHOUSE" ] },
+    	                        "MON" : { "MONITOR"        : [ "WAREHOUSE" ] },
+	                        "USE" : { "USAGE, OPERATE" : [ "WAREHOUSE" ] }
+   	},
+        "DEFAULT_WH_PARAMS" : {
+            "MAX_CLUSTER_COUNT"                   : 1,
+            "MIN_CLUSTER_COUNT"                   : 1,
+            "AUTO_SUSPEND"                        : 60,
+            "AUTO_RESUME"                         : "True",
+            "INITIALLY_SUSPENDED"                 : "True",
+            "SCALING_POLICY"                      : "STANDARD",
+            "COMMENT"                             : "sf_create_obj created warehouse",
+            "ENABLE_QUERY_ACCELERATION"           : "True",
+            "QUERY_ACCELERATION_MAX_SCALE_FACTOR" : 16,
+            "MAX_CONCURRENCY_LEVEL"               : 16,
+            "STATEMENT_QUEUED_TIMEOUT_IN_SECONDS" : 1800,
+            "STATEMENT_TIMEOUT_IN_SECONDS"        : 3600
+	}
+}
