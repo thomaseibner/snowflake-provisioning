@@ -18,8 +18,8 @@ It can of course also be managed manually creating roles and granting access dir
 
 ```
 CREATE ROLE IF NOT EXISTS TEST_READER_FR;
-GRANT USAGE ON ROLE TEST_DB_TEST_SC_RO_AR TO ROLE TEST_READER_FR;
-GRANT USAGE ON ROLE TEST_WH_USE_AR        TO ROLE TEST_READER_FR;
+GRANT ROLE TEST_DB_TEST_SC_RO_AR TO ROLE TEST_READER_FR;
+GRANT ROLE TEST_WH_USE_AR        TO ROLE TEST_READER_FR;
 ```
 
 Leading to the following role hierarchy:
@@ -33,6 +33,7 @@ With this flexible tool you can embed environment names in your naming conventio
 1. [Overview](#overview)
 1. [Configuration](#configuration)
 1. [Executing](#executing)
+  1. [Creating and Dropping Warehouses](#creating_and_dropping_warehouses)
 1. [Automating](#automating_functional_roles)
 1. [Deficiencies](#deficiencies)
 1. [Author](#author)
@@ -65,7 +66,9 @@ optional arguments:
   -h, --help            show this help message and exit
 ```
 
-Each object has its own options reflecting all the parameters for the given snowflake object:
+Each object has its own options reflecting all the parameters for the given snowflake object. 
+
+### Creating and Dropping Warehouses
 
 ```$ ./sf_create_obj warehouse --help
 usage: sf_create_obj warehouse [-h] [--warehouse_size WAREHOUSE_SIZE] [--max_cluster_count MAX_CLUSTER_COUNT] [--min_cluster_count MIN_CLUSTER_COUNT]
@@ -108,6 +111,66 @@ optional arguments:
   --comment COMMENT     Comment to add to object
   --tag TAG             Add a single tag_name=value to object
 ```
+So you can extract the sql to create a warehouse and associated access roles by calling the script with the parameters you need:
+
+```$ ./sf_create_obj warehouse TEST_WH
+CREATE WAREHOUSE IF NOT EXISTS TEST_WH
+  AUTO_RESUME                         = TRUE
+  AUTO_SUSPEND                        = 60
+  COMMENT                             = 'sf_create_obj created warehouse'
+  ENABLE_QUERY_ACCELERATION           = TRUE
+  INITIALLY_SUSPENDED                 = TRUE
+  MAX_CLUSTER_COUNT                   = 1
+  MAX_CONCURRENCY_LEVEL               = 16
+  MIN_CLUSTER_COUNT                   = 1
+  QUERY_ACCELERATION_MAX_SCALE_FACTOR = 16
+  SCALING_POLICY                      = STANDARD
+  STATEMENT_QUEUED_TIMEOUT_IN_SECONDS = 1800
+  STATEMENT_TIMEOUT_IN_SECONDS        = 3600
+;
+CREATE ROLE IF NOT EXISTS TEST_WH_USE_AR;
+CREATE ROLE IF NOT EXISTS TEST_WH_MON_AR;
+CREATE ROLE IF NOT EXISTS TEST_WH_MOD_AR;
+CREATE ROLE IF NOT EXISTS TEST_WH_ADM_AR;
+
+GRANT OWNERSHIP ON WAREHOUSE TEST_WH TO ROLE SYSADMIN REVOKE CURRENT GRANTS;
+GRANT ALL PRIVILEGES ON WAREHOUSE TEST_WH TO ROLE SYSADMIN;
+GRANT OWNERSHIP ON ROLE TEST_WH_USE_AR TO ROLE SYSADMIN REVOKE CURRENT GRANTS;
+GRANT OWNERSHIP ON ROLE TEST_WH_MON_AR TO ROLE SYSADMIN REVOKE CURRENT GRANTS;
+GRANT OWNERSHIP ON ROLE TEST_WH_MOD_AR TO ROLE SYSADMIN REVOKE CURRENT GRANTS;
+GRANT OWNERSHIP ON ROLE TEST_WH_ADM_AR TO ROLE SYSADMIN REVOKE CURRENT GRANTS;
+
+GRANT ROLE TEST_WH_USE_AR TO ROLE TEST_WH_MON_AR;
+GRANT ROLE TEST_WH_MON_AR TO ROLE TEST_WH_MOD_AR;
+GRANT ROLE TEST_WH_MOD_AR TO ROLE TEST_WH_ADM_AR;
+GRANT ROLE TEST_WH_ADM_AR TO ROLE SYSADMIN;
+
+GRANT USAGE, OPERATE ON WAREHOUSE TEST_WH TO ROLE TEST_WH_USE_AR;
+GRANT MONITOR ON WAREHOUSE TEST_WH TO ROLE TEST_WH_MON_AR;
+GRANT MODIFY ON WAREHOUSE TEST_WH TO ROLE TEST_WH_MOD_AR;
+GRANT ALL ON WAREHOUSE TEST_WH TO ROLE TEST_WH_ADM_AR;
+```
+With an easy way to drop the warehouse, roles, and associated grants:
+```$ ./sf_drop_obj warehouse TEST_WH
+REVOKE ALL ON WAREHOUSE TEST_WH FROM ROLE TEST_WH_ADM_AR;
+REVOKE MODIFY ON WAREHOUSE TEST_WH FROM ROLE TEST_WH_MOD_AR;
+REVOKE MONITOR ON WAREHOUSE TEST_WH FROM ROLE TEST_WH_MON_AR;
+REVOKE USAGE, OPERATE ON WAREHOUSE TEST_WH FROM ROLE TEST_WH_USE_AR;
+
+REVOKE ROLE TEST_WH_ADM_AR FROM ROLE SYSADMIN;
+REVOKE ROLE TEST_WH_MOD_AR FROM ROLE TEST_WH_ADM_AR;
+REVOKE ROLE TEST_WH_MON_AR FROM ROLE TEST_WH_MOD_AR;
+REVOKE ROLE TEST_WH_USE_AR FROM ROLE TEST_WH_MON_AR;
+
+DROP ROLE IF EXISTS TEST_WH_ADM_AR;
+DROP ROLE IF EXISTS TEST_WH_MOD_AR;
+DROP ROLE IF EXISTS TEST_WH_MON_AR;
+DROP ROLE IF EXISTS TEST_WH_USE_AR;
+DROP WAREHOUSE IF EXISTS TEST_WH;
+```
+
+
+
 The object name is validated against the allowed object names in Snowflake. 
 
 ## Automating Functional Roles
@@ -134,7 +197,8 @@ Thomas Eibner (@thomaseibner) [twitter](http://twitter.com/thomaseibner) [Linked
 
 ## Credits
 
-Scott Redding @ Snowflake for great conversations on the topic and always being willing to hear out ideas. 
+Scott Redding @ Snowflake for great conversations on the topic and always being willing to hear out ideas.
+
 Ryan Wieber @ Snowflake likewise for entertaining my questions and having a lot of patience. 
 
 ## License
