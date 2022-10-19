@@ -33,7 +33,7 @@ With this flexible tool you can embed environment names in your naming conventio
 1. [Overview](#overview)
 1. [Configuration](#configuration)
 1. [Executing](#executing)
-  1. [Creating and Dropping Warehouses](#creating_and_dropping_warehouses)
+   1. [Creating and Dropping Warehouses](#creating-and-dropping-warehouses)
 1. [Automating](#automating_functional_roles)
 1. [Deficiencies](#deficiencies)
 1. [Author](#author)
@@ -67,53 +67,35 @@ optional arguments:
   -h, --help            show this help message and exit
 ```
 
-Each object has its own options reflecting all the parameters for the given snowflake object. 
-
-### Creating and Dropping Warehouses
+Each object has its own options reflecting all the parameters for the given snowflake object. An example is the embedded help for creating a database:
 
 ```
-$ ./sf_create_obj warehouse --help
-usage: sf_create_obj warehouse [-h] [--warehouse_size WAREHOUSE_SIZE] [--max_cluster_count MAX_CLUSTER_COUNT] [--min_cluster_count MIN_CLUSTER_COUNT]
-                               [--scaling_policy {STANDARD,ECONOMY}] [--auto_suspend AUTO_SUSPEND] [--auto_resume] [--initially_suspended] [--resource_monitor RESOURCE_MONITOR]
-                               [--enable_query_acceleration] [--query_acceleration_max_scale_factor QUERY_ACCELERATION_MAX_SCALE_FACTOR]
-                               [--max_concurrency_level MAX_CONCURRENCY_LEVEL] [--statement_queued_timeout_in_seconds STATEMENT_QUEUED_TIMEOUT_IN_SECONDS]
-                               [--statement_timeout_in_seconds STATEMENT_TIMEOUT_IN_SECONDS] [--comment COMMENT] [--tag TAG]
-                               name
+$ ./sf_create_obj database --help
+usage: sf_create_obj database [-h] [--data_retention_time_in_days DATA_RETENTION_TIME_IN_DAYS] [--max_data_extension_time_in_days MAX_DATA_EXTENSION_TIME_IN_DAYS] [--transient]
+                              [--default_ddl_collation DEFAULT_DDL_COLLATION] [--comment COMMENT] [--tag TAG]
+                              name
 
 positional arguments:
   name                  Name of Snowflake object to provision
 
 optional arguments:
   -h, --help            show this help message and exit
-  --warehouse_size WAREHOUSE_SIZE
-                        Warehouse Size: XSmall - X6Large
-  --max_cluster_count MAX_CLUSTER_COUNT
-                        Warehouse Max Cluster Count 1 for standard edition, 1-10 for higher editions
-  --min_cluster_count MIN_CLUSTER_COUNT
-                        Warehouse Min Cluster Count 1 for standard edition, 1-10 for higher editions
-  --scaling_policy {STANDARD,ECONOMY}
-                        Warehouse Scaling Policy: STANDARD or ECONOMY
-  --auto_suspend AUTO_SUSPEND
-                        Warehouse Auto-Suspend: Minimum 60 seconds, 0 to never suspend
-  --auto_resume         Warehouse Auto-Resume: FALSE by including this parameter TRUE by not including it
-  --initially_suspended
-                        Warehouse Initially Suspended: FALSE by including this parameter TRUE by not including it
-  --resource_monitor RESOURCE_MONITOR
-                        Name of resource monitor to add warehouse to
-  --enable_query_acceleration
-                        Enable query acceleration: FALSE by including this parameter TRUE by not including it
-  --query_acceleration_max_scale_factor QUERY_ACCELERATION_MAX_SCALE_FACTOR
-                        Query acceleration max scale factorn: 0-100, default: 8
-  --max_concurrency_level MAX_CONCURRENCY_LEVEL
-                        Max concurrency level
-  --statement_queued_timeout_in_seconds STATEMENT_QUEUED_TIMEOUT_IN_SECONDS
-                        Statement Queued Timeout in Seconds
-  --statement_timeout_in_seconds STATEMENT_TIMEOUT_IN_SECONDS
-                        Statement Timeout in Seconds
+  --data_retention_time_in_days DATA_RETENTION_TIME_IN_DAYS
+                        Time Travel in days 1 for standard edition 1-90 for higher editions
+  --max_data_extension_time_in_days MAX_DATA_EXTENSION_TIME_IN_DAYS
+                        Maximum number of days Snowflake can extend data retention period 1-90
+  --transient           Applies to database and schema, creates transient object
+  --default_ddl_collation DEFAULT_DDL_COLLATION
+                        Default DDL Collation
   --comment COMMENT     Comment to add to object
   --tag TAG             Add a single tag_name=value to object
 ```
-So you can extract the sql to create a warehouse and associated access roles by calling the script with the parameters you need:
+
+By default the script prints the DDL to STDOUT. 
+
+### Creating and Dropping Warehouses
+
+The simplest way to show how a sample warehouse could be provisioned is to run it with the [default configuration](wh-config.json) and simply provide a name:
 
 ```
 $ ./sf_create_obj warehouse TEST_WH
