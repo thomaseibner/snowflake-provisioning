@@ -50,7 +50,8 @@ The configuration of the provision tool allows you to create multiple different 
 
 Embedded help is provided with the scripts:
 
-```$ ./sf_create_obj --help
+```
+$ ./sf_create_obj --help
 usage: sf_create_obj [-h] {database,schema,warehouse} ...
 
 Snowflake database, schema, and warehouse provisioning
@@ -70,7 +71,8 @@ Each object has its own options reflecting all the parameters for the given snow
 
 ### Creating and Dropping Warehouses
 
-```$ ./sf_create_obj warehouse --help
+```
+$ ./sf_create_obj warehouse --help
 usage: sf_create_obj warehouse [-h] [--warehouse_size WAREHOUSE_SIZE] [--max_cluster_count MAX_CLUSTER_COUNT] [--min_cluster_count MIN_CLUSTER_COUNT]
                                [--scaling_policy {STANDARD,ECONOMY}] [--auto_suspend AUTO_SUSPEND] [--auto_resume] [--initially_suspended] [--resource_monitor RESOURCE_MONITOR]
                                [--enable_query_acceleration] [--query_acceleration_max_scale_factor QUERY_ACCELERATION_MAX_SCALE_FACTOR]
@@ -113,7 +115,8 @@ optional arguments:
 ```
 So you can extract the sql to create a warehouse and associated access roles by calling the script with the parameters you need:
 
-```$ ./sf_create_obj warehouse TEST_WH
+```
+$ ./sf_create_obj warehouse TEST_WH
 CREATE WAREHOUSE IF NOT EXISTS TEST_WH
   AUTO_RESUME                         = TRUE
   AUTO_SUSPEND                        = 60
@@ -151,7 +154,8 @@ GRANT MODIFY ON WAREHOUSE TEST_WH TO ROLE TEST_WH_MOD_AR;
 GRANT ALL ON WAREHOUSE TEST_WH TO ROLE TEST_WH_ADM_AR;
 ```
 With an easy way to drop the warehouse, roles, and associated grants:
-```$ ./sf_drop_obj warehouse TEST_WH
+```
+$ ./sf_drop_obj warehouse TEST_WH
 REVOKE ALL ON WAREHOUSE TEST_WH FROM ROLE TEST_WH_ADM_AR;
 REVOKE MODIFY ON WAREHOUSE TEST_WH FROM ROLE TEST_WH_MOD_AR;
 REVOKE MONITOR ON WAREHOUSE TEST_WH FROM ROLE TEST_WH_MON_AR;
