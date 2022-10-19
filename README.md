@@ -4,7 +4,7 @@ Snowflake Database, Schema, and Warehouse provisioning
 
 ## Overivew
 
-Python based Snowflake Database/Schema/Warehouse Provisioning script that provides a frame-work for deploying objects with configurable and customizable access roles. The naming convention of using a postfix of _AR for access roles and a postfix _FR for functional roles provides clear separation between roles. In order for the access roles to show up towards the end of your role drop-downs in both the Snowflake Classic UI and Snowsight all roles are prefixed with a single underscore and is configurable so a database can be prefixed with _DB_ and a warehouse with _WH_ separately. 
+Python based Snowflake Database/Schema/Warehouse Provisioning script that provides a frame-work for deploying objects with configurable and customizable access roles. The naming convention of using a postfix of _AR for access roles and a postfix _FR for functional roles provides clear separation between roles. In order for the access roles to show up towards the end of your role drop-downs in both the Snowflake Classic UI and Snowsight all roles are prefixed with a single underscore and is configurable so a database can be prefixed with _DB and a warehouse with _WH separately. 
 
 <img src="images/Diagram1.png" alt="Provisioning of Database, Schema, and Warehouse Objects" title="Provisioning Objects" /> 
 
