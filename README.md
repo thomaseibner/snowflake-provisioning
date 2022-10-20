@@ -6,6 +6,7 @@ Snowflake Database, Schema, and Warehouse provisioning
 
 1. [Overview](#overview)
    1. [Functional and Access roles](#functional-and-access-roles)
+   1. [Creating a Functional role](#creating-a-functional-role)
 1. [Configuration](#configuration)
 1. [Executing](#executing)
    1. [Creating and Dropping Warehouses](#creating-and-dropping-warehouses)
@@ -15,7 +16,7 @@ Snowflake Database, Schema, and Warehouse provisioning
 1. [Credits](#credits)
 1. [License](#license)
 
-## Overivew
+## Overview
 
 This repository contains a Python-based Snowflake Database/Schema/Warehouse Provisioning script, that provides a
 framework for deploying objects with configurable and customizable access roles.
@@ -64,9 +65,17 @@ from the RO role.
 Where that becomes more powerful is with the privileges granted at the schema level - the RO role at the schema level
 is granted select on all (and future) tables in the schema. This privilege is in turn granted to the RO role at the
 database level through role inheritance. The RW role is granted insert, update, and delete on all (and future) tables
-in the schema and with the role inheritance the RW role at the database now has more functionality.
+in the schema and with the role inheritance the RW role at the database now has more functionality. This is why both
+database and schema role hierarchy for this tool need to be in sync. 
 
-It is now possible to create a simple functional role using the above illustration of access roles:
+The warehouse object is completely independent from databases and schemas so the naming convention and role hierarchy
+can be different there as well. In the example here we have chosen to use 4 different types of access roles that each
+represent privileges you may want to separate out. 
+
+### Creating a Functional role
+
+Putting these individual access roles together to form a simple functional role shows how powerful the role hierarchy
+in Snowflake is: 
 ```
 CREATE ROLE IF NOT EXISTS TEST_READER_FR;
 GRANT ROLE _SC_TEST_DB_TEST_SC_RO_AR TO ROLE TEST_READER_FR;
@@ -74,12 +83,16 @@ GRANT ROLE _WH_TEST_WH_USE_AR        TO ROLE TEST_READER_FR;
 ```
 Leading to the following role hierarchy:
 ![Functional role and the hierarchy of grants it gives access to](images/Diagram3.png)
+The TEST\_READER\_FR functional role is granted two explicit roles that give it access to use and operate the
+warehouse TEST\_WH, use the database TEST\_DB, use the schema TEST\_SC, as well as select from all tables in the
+TEST\_SC schema. 
 
+With this flexibility it is possible to manage just a few functional roles that provides the exact access you want
+across hundreds of databases and schemas through simple automation.
 
-
-
-With this flexible tool you can embed environment names in your naming convention like including PROD/TEST/DEV in your name. An example could be `PROD_INGESTION_DB`. Now you can rely on your Role-Based Acces Control only having access to PROD roles by limiting to roles with PROD in the beginning of the name.
-
+This documentation doesn't aim to spell out a specific architectural strategy on how to separate environments in a
+single Snowflake account, but gives you the flexibility to solve that yourself through your own naming convention.
+An example is embedding PROD/TEST/DEV in your database name either as a prefix or embedded in the name. 
 
 ## Configuration
 
