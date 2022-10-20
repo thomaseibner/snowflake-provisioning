@@ -34,17 +34,17 @@ Best practice as recommended by Snowflake is to separate functional access from 
 database, schema, individual tables, etc.
 
 Functional access can be defined as a role that a script or user needs to perform and operation across many schemas or
-databases. In the examples provided all functional roles have a postfix of _FR in the role name. 
+databases. In the examples provided all functional roles have a postfix of \_FR in the role name. 
 
 Access roles govern access to a privilege on an object. An example is an access role that provides write access to all
 tables in a schema. Access roles often are nested and a role at a database level can provide access to all underlying
 schemas. That means rather than explicitly granting a privilege it can be inherited from another role. A common
-convention that is followed here is to use a postfix of _AR to signify an access role. 
+convention that is followed here is to use a postfix of \_AR to signify an access role. 
 
-Using _AR and _FR to provide clear separation between roles makes it easier to quickly see the difference when looking
+Using \_AR and \_FR to provide clear separation between roles makes it easier to quickly see the difference when looking
 at the roles in Snowflake. Taking this one step further to simplify how your roles are shown in both Snowflake's
 Classic UI as well as Snowsight this framework allows you to prefix access roles with a custom name which includes an
-underscore (_). This puts the access roles at the end of the role list and helps avoid users using access roles
+underscore (\_). This puts the access roles at the end of the role list and helps avoid users using access roles
 directly. Having a customizable prefix also allows us to think ahead to the automation of functional roles. In the
 sample configuration database access roles are prefixed by \_DB\_, schema access roles with \_SC\_, and warehouses
 with \_WH\_ respectively. 
@@ -68,7 +68,7 @@ Leading to the following role hierarchy:
 
 ![Functional role and the hierarchy of grants it gives access to](images/Diagram3.png)
 
-With this flexible tool you can embed environment names in your naming convention like including PROD/TEST/DEV in your name. An example could be =PROD_TEST_DB=. Now you can rely on your Role-Based Acces Control only having access to PROD roles by limiting to roles with PROD in the beginning of the name.
+With this flexible tool you can embed environment names in your naming convention like including PROD/TEST/DEV in your name. An example could be `PROD_INGESTION_DB`. Now you can rely on your Role-Based Acces Control only having access to PROD roles by limiting to roles with PROD in the beginning of the name.
 
 
 ## Configuration
