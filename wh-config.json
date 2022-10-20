@@ -16,9 +16,6 @@
             "INITIALLY_SUSPENDED"                 : "True",
             "SCALING_POLICY"                      : "STANDARD",
             "COMMENT"                             : "sf_create_obj created warehouse",
-            "ENABLE_QUERY_ACCELERATION"           : "True",
-            "QUERY_ACCELERATION_MAX_SCALE_FACTOR" : 16,
-            "MAX_CONCURRENCY_LEVEL"               : 16,
             "STATEMENT_QUEUED_TIMEOUT_IN_SECONDS" : 1800,
             "STATEMENT_TIMEOUT_IN_SECONDS"        : 3600
 	},

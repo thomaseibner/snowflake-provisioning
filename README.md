@@ -11,7 +11,7 @@ Snowflake Database, Schema, and Warehouse provisioning
 1. [Executing](#executing)
    1. [Creating and Dropping Warehouses](#creating-and-dropping-warehouses)
 1. [Automating](#automating_functional_roles)
-1. [Deficiencies](#deficiencies)
+1. [TODO](#todo)
 1. [Author](#author)
 1. [Credits](#credits)
 1. [License](#license)
@@ -76,7 +76,7 @@ represent privileges you may want to separate out.
 
 Putting these individual access roles together to form a simple functional role shows how powerful the role hierarchy
 in Snowflake is: 
-```
+```SQL
 CREATE ROLE IF NOT EXISTS TEST_READER_FR;
 GRANT ROLE _SC_TEST_DB_TEST_SC_RO_AR TO ROLE TEST_READER_FR;
 GRANT ROLE _WH_TEST_WH_USE_AR        TO ROLE TEST_READER_FR;
@@ -96,9 +96,37 @@ An example is embedding PROD/TEST/DEV in your database name either as a prefix o
 
 ## Configuration
 
-3 configuration files are needed and a sample set of configurations are provided. Each of the configuration files are json-formatted. 
+Each of the 3 types of objects that can be provisioned with this script need their own json-formatted configuration
+file ([db-config.json](db-config.json), [sc-config.json](sc-config.json), [wh-config.json](wh-config.json)). 
 
-The configuration of the provision tool allows you to create multiple different types of access roles. If you want to customize a special role that allows it to execute stored procedures and tasks, but not directly write to tables that is possible as long as you can specify it in Snowflake grant terms. 
+The default [configuration](wh-config.json) for a warehouse is provided below:
+
+```JSON
+{
+	"TYPE"              : "WAREHOUSE",
+	"ROLE_OWNER"        : "SYSADMIN",
+	"ROLE_HIERARCHY"    : [ "ADM", "MOD", "MON", "USE" ],
+        "ROLE_PERMISSIONS"  : {
+	                        "ADM" : { "ALL"            : [ "WAREHOUSE" ] },
+	                        "MOD" : { "MODIFY"         : [ "WAREHOUSE" ] },
+    	                        "MON" : { "MONITOR"        : [ "WAREHOUSE" ] },
+	                        "USE" : { "USAGE, OPERATE" : [ "WAREHOUSE" ] }
+   	},
+        "DEFAULT_WH_PARAMS" : {
+            "MAX_CLUSTER_COUNT"                   : 1,
+            "MIN_CLUSTER_COUNT"                   : 1,
+            "AUTO_SUSPEND"                        : 60,
+            "AUTO_RESUME"                         : "True",
+            "INITIALLY_SUSPENDED"                 : "True",
+            "SCALING_POLICY"                      : "STANDARD",
+            "COMMENT"                             : "sf_create_obj created warehouse",
+            "STATEMENT_QUEUED_TIMEOUT_IN_SECONDS" : 1800,
+            "STATEMENT_TIMEOUT_IN_SECONDS"        : 3600
+	},
+        "AR_PREFIX"         : "_WH_"
+}
+```
+As described earlier the configuration of the provisioning tool allows you to create multiple different types of access roles. If you want to customize a special role that allows it to execute stored procedures and tasks, but not directly write to tables that is possible as long as you can specify it in Snowflake grant terms. 
 
 ## Executing
 
@@ -157,12 +185,9 @@ CREATE WAREHOUSE IF NOT EXISTS TEST_WH
   AUTO_RESUME                         = TRUE
   AUTO_SUSPEND                        = 60
   COMMENT                             = 'sf_create_obj created warehouse'
-  ENABLE_QUERY_ACCELERATION           = TRUE
   INITIALLY_SUSPENDED                 = TRUE
   MAX_CLUSTER_COUNT                   = 1
-  MAX_CONCURRENCY_LEVEL               = 16
   MIN_CLUSTER_COUNT                   = 1
-  QUERY_ACCELERATION_MAX_SCALE_FACTOR = 16
   SCALING_POLICY                      = STANDARD
   STATEMENT_QUEUED_TIMEOUT_IN_SECONDS = 1800
   STATEMENT_TIMEOUT_IN_SECONDS        = 3600
@@ -236,10 +261,11 @@ for each role you care about:
 ```
 
 
-## Deficiencies 
+## TODO 
 
-Currently does not support "GRANT ALL ON ALL PIPES IN SCHEMA", tags, search optimizations.
-Currently does not support quoted object names in Snowflake.
+- [ ] Simplifying code to allow for a single role at each object level [sfprovisioning.py](sfprovisioning.py)/create\_%\_r2r\_grants
+- [ ] Currently does not support "GRANT ALL ON ALL PIPES IN SCHEMA", tags, search optimizations.
+- [ ] Currently does not support quoted object names in Snowflake.
 
 ## Author
 
