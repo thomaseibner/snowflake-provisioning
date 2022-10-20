@@ -16,13 +16,25 @@ Snowflake Database, Schema, and Warehouse provisioning
 
 ## Overivew
 
-Python based Snowflake Database/Schema/Warehouse Provisioning script that provides a frame-work for deploying objects with configurable and customizable access roles. The naming convention of using a postfix of _AR for access roles and a postfix _FR for functional roles provides clear separation between roles. In order for the access roles to show up towards the end of your role drop-downs in both the Snowflake Classic UI and Snowsight all roles are prefixed with a single underscore and is configurable so a database can be prefixed with _DB and a warehouse with _WH separately. 
+This repository contains a Python-based Snowflake Database/Schema/Warehouse Provisioning script, that provides a frame-work for deploying objects with configurable and customizable access roles.
 
-<img src="images/Diagram1.png" alt="Provisioning of Database, Schema, and Warehouse Objects" title="Provisioning Objects" /> 
+![Provisioning of Database, Schema, and Warehouse Objects](images/Diagram1.png)
+
+Snowflake supports a highly granular and configurable RBAC[^1] (Role-Based Access Control) scheme.
+The posibilities of configuration are endless and it is almost too complex to understand when you are new to Snowflake.
+`sf_create_obj` aims to provide an example of an implementation that can be easily extended while showing all sql
+commands used to build out the framework with. This also allows for easy integration with
+[schemachange](https://github.com/Snowflake-Labs/schemachange)/Formerly
+[Snowchange](https://jeremiahhansen.medium.com/snowchange-a-database-change-management-tool-b9f0b786a7da) as both deploy
+and rollback output is provided. 
+
+
+
+The naming convention of using a postfix of _AR for access roles and a postfix _FR for functional roles provides clear separation between roles. In order for the access roles to show up towards the end of your role drop-downs in both the Snowflake Classic UI and Snowsight all roles are prefixed with a single underscore and is configurable so a database can be prefixed with \_DB\_ and a warehouse with \_WH\_ separately. 
 
 Inheritance between access roles is setup based on configurable parameters and is managed between database and schemas as a simplified illustration below shows:
 
-<img src="images/Diagram2.png" alt="Provisioned Access Role Hierarchy between Database, Schema, and warehouse" title="Access Role Hierarchy" />
+![Provisioned Access Role Hierarchy between Database, Schema, and warehouse](images/Diagram2.png)
 
 The provisioned database/schema/warehouse and access roles allow for an easy way of setting Automated Governance of Role-Based Access Control.
 
@@ -36,7 +48,7 @@ GRANT ROLE _WH_TEST_WH_USE_AR        TO ROLE TEST_READER_FR;
 
 Leading to the following role hierarchy:
 
-<img src="images/Diagram3.png" alt="Functional role and the hierarchy of grants it gives access to" title="Functional role hierarchy" />
+![Functional role and the hierarchy of grants it gives access to](images/Diagram3.png)
 
 With this flexible tool you can embed environment names in your naming convention like including PROD/TEST/DEV in your name. An example could be =PROD_TEST_DB=. Now you can rely on your Role-Based Acces Control only having access to PROD roles by limiting to roles with PROD in the beginning of the name.
 
@@ -186,7 +198,7 @@ for each role you care about:
 ## Deficiencies 
 
 Currently does not support "GRANT ALL ON ALL PIPES IN SCHEMA", tags, search optimizations.
-Currently does not support quoted object names in Snowflake. 
+Currently does not support quoted object names in Snowflake.
 
 ## Author
 
@@ -203,3 +215,8 @@ Ryan Wieber @ Snowflake likewise for entertaining my questions and having a lot 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this tool except in compliance with the License. You may obtain a copy of the License at: http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+
+
+
+
+[^1]: https://docs.snowflake.com/en/user-guide/security-access-control-overview.html
