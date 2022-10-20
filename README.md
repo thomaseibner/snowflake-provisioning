@@ -62,21 +62,21 @@ created so that the RW role doesn't have to be granted explicit permission to us
 from the RO role.
 
 Where that becomes more powerful is with the privileges granted at the schema level - the RO role at the schema level
-is granted select on all tables 
+is granted select on all (and future) tables in the schema. This privilege is in turn granted to the RO role at the
+database level through role inheritance. The RW role is granted insert, update, and delete on all (and future) tables
+in the schema and with the role inheritance the RW role at the database now has more functionality.
 
-The provisioned database/schema/warehouse and access roles allow for an easy way of setting Automated Governance of Role-Based Access Control.
-
-It can of course also be managed manually creating roles and granting access directly to a role like:
-
+It is now possible to create a simple functional role using the above illustration of access roles:
 ```
 CREATE ROLE IF NOT EXISTS TEST_READER_FR;
 GRANT ROLE _SC_TEST_DB_TEST_SC_RO_AR TO ROLE TEST_READER_FR;
 GRANT ROLE _WH_TEST_WH_USE_AR        TO ROLE TEST_READER_FR;
 ```
-
 Leading to the following role hierarchy:
-
 ![Functional role and the hierarchy of grants it gives access to](images/Diagram3.png)
+
+
+
 
 With this flexible tool you can embed environment names in your naming convention like including PROD/TEST/DEV in your name. An example could be `PROD_INGESTION_DB`. Now you can rely on your Role-Based Acces Control only having access to PROD roles by limiting to roles with PROD in the beginning of the name.
 
