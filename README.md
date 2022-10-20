@@ -130,7 +130,7 @@ As described earlier the configuration of the provisioning tool allows you to cr
 
 ## Executing
 
-Embedded help is provided with the scripts:
+Embedded help is provided with the script:
 
 ```
 $ ./sf_create_obj --help
@@ -173,12 +173,14 @@ optional arguments:
   --tag TAG             Add a single tag_name=value to object
 ```
 
-By default the script prints the DDL to STDOUT. This is to allow for pushing the create/drop (rollback) output into a snowchange/schemachange pipeline for execution. 
+By default the script prints the DDL to STDOUT. This is to allow for pushing the create/drop (rollback) output
+into a snowchange/schemachange pipeline for execution. 
 
 ### Creating and Dropping Warehouses
 
-The simplest way to show how a sample warehouse could be provisioned is to run it with the [default configuration](wh-config.json) and simply provide a name:
-
+The simplest way to show how a sample warehouse could be provisioned is to run the script with the
+[default configuration](wh-config.json) and simply provide a name. As part of the validation the script performs
+on the parameters for each type of object the name is validated against the allowed object names in Snowflake. 
 ```
 $ ./sf_create_obj warehouse TEST_WH
 CREATE WAREHOUSE IF NOT EXISTS TEST_WH
@@ -233,10 +235,7 @@ DROP ROLE IF EXISTS TEST_WH_MON_AR;
 DROP ROLE IF EXISTS TEST_WH_USE_AR;
 DROP WAREHOUSE IF EXISTS TEST_WH;
 ```
-
-
-
-The object name is validated against the allowed object names in Snowflake. 
+`sf_drop_obj` is symlinked to `sf_create_ojb` and the script detects when it is called as `sf_drop_obj`.
 
 ## Automating Functional Roles
 
