@@ -54,6 +54,16 @@ automatically between database and schemas as a simplified illustration below sh
 
 ![Provisioned Access Role Hierarchy between Database, Schema, and warehouse](images/Diagram2.png)
 
+While the illustration might look complex at first it accomplishes quite a few things. For the database 3 different
+roles are created and a hierarchy is formed from the lowest access role to the highest access role. In the example
+the read-only (RO) role can only use and monitor the database TEST_DB; the read-write (RW) role doesn't have any
+explicit privileges; and the admin (ADM) role is granted all privileges on the database. The role hierarchy is
+created so that the RW role doesn't have to be granted explicit permission to use and monitor, but it inherits this
+from the RO role.
+
+Where that becomes more powerful is with the privileges granted at the schema level - the RO role at the schema level
+is granted select on all tables 
+
 The provisioned database/schema/warehouse and access roles allow for an easy way of setting Automated Governance of Role-Based Access Control.
 
 It can of course also be managed manually creating roles and granting access directly to a role like:

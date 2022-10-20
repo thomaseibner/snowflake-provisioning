@@ -244,7 +244,8 @@ class SfProvisionConfig():
             if (once == 1):
                 # One grant at the parent database level is enough for
                 # all the roles inheriting from this role to see the db
-                self.grant_privilege('USAGE', 'DATABASE', cmdline.db_nm, ar_role)                
+                self.grant_privilege('USAGE', 'DATABASE', cmdline.db_nm, ar_role)
+                self.grant_privilege('USAGE', 'SCHEMA', f"{cmdline.db_nm}.{cmdline.sc_nm}", ar_role)
                 once = 0
             self.grant_r2r(ar_role, db_ar_role)
             type_grants = cfg.config['ROLE_PERMISSIONS'][role_type]

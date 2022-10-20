@@ -31,9 +31,9 @@
 					     "VIEWS",
 					     "MATERIALIZED VIEWS"
 					            ], 
-				   "REFERENCES" : ["EXTERNAL TABLES","VIEWS"],
-  				   "USAGE"  : ["FILE FORMATS","FUNCTIONS","STAGES"],
-	                           "MONITOR" : ["TASKS"] 
+				         "REFERENCES" : ["EXTERNAL TABLES","VIEWS"],
+     				         "USAGE"  : ["FILE FORMATS","FUNCTIONS","STAGES"],
+	                                 "MONITOR" : ["TASKS"] 
 	                       }
 	},
         "DEFAULT_SC_PARAMS" : {
