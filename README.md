@@ -2,6 +2,18 @@
 
 Snowflake Database, Schema, and Warehouse provisioning
 
+## Table of Contents
+
+1. [Overview](#overview)
+1. [Configuration](#configuration)
+1. [Executing](#executing)
+   1. [Creating and Dropping Warehouses](#creating-and-dropping-warehouses)
+1. [Automating](#automating_functional_roles)
+1. [Deficiencies](#deficiencies)
+1. [Author](#author)
+1. [Credits](#credits)
+1. [License](#license)
+
 ## Overivew
 
 Python based Snowflake Database/Schema/Warehouse Provisioning script that provides a frame-work for deploying objects with configurable and customizable access roles. The naming convention of using a postfix of _AR for access roles and a postfix _FR for functional roles provides clear separation between roles. In order for the access roles to show up towards the end of your role drop-downs in both the Snowflake Classic UI and Snowsight all roles are prefixed with a single underscore and is configurable so a database can be prefixed with _DB and a warehouse with _WH separately. 
@@ -18,8 +30,8 @@ It can of course also be managed manually creating roles and granting access dir
 
 ```
 CREATE ROLE IF NOT EXISTS TEST_READER_FR;
-GRANT ROLE TEST_DB_TEST_SC_RO_AR TO ROLE TEST_READER_FR;
-GRANT ROLE TEST_WH_USE_AR        TO ROLE TEST_READER_FR;
+GRANT ROLE _SC_TEST_DB_TEST_SC_RO_AR TO ROLE TEST_READER_FR;
+GRANT ROLE _WH_TEST_WH_USE_AR        TO ROLE TEST_READER_FR;
 ```
 
 Leading to the following role hierarchy:
@@ -28,17 +40,6 @@ Leading to the following role hierarchy:
 
 With this flexible tool you can embed environment names in your naming convention like including PROD/TEST/DEV in your name. An example could be =PROD_TEST_DB=. Now you can rely on your Role-Based Acces Control only having access to PROD roles by limiting to roles with PROD in the beginning of the name.
 
-## Table of Contents
-
-1. [Overview](#overview)
-1. [Configuration](#configuration)
-1. [Executing](#executing)
-   1. [Creating and Dropping Warehouses](#creating-and-dropping-warehouses)
-1. [Automating](#automating_functional_roles)
-1. [Deficiencies](#deficiencies)
-1. [Author](#author)
-1. [Credits](#credits)
-1. [License](#license)
 
 ## Configuration
 
@@ -170,7 +171,17 @@ SHOW GRANTS ON TEST_READER_FR;
 SHOW FUTURE GRANTS IN DATABASE;
 SHOW FUTURE GRANTS IN DATABASE.SCHEMA;
 ```
-This starts becoming a problem when you have too many objects deployed and will need a simple cache of future grants updated everytime new databases, schemas, or warehouses are provisioned/deprovisioned.
+If your provisioning of objects is entirely governed by a the consistent naming convention `sf_create_obj` provides you can make it even simpler based on the available access roles in the account:
+
+```
+show roles like '_%_AR'
+parse output
+for each role you care about:
+  show grants to role
+  add/remove grants needed
+
+```
+
 
 ## Deficiencies 
 
