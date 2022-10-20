@@ -5,6 +5,7 @@ Snowflake Database, Schema, and Warehouse provisioning
 ## Table of Contents
 
 1. [Overview](#overview)
+   1. [Functional and Access roles](#functional-and-access-roles)
 1. [Configuration](#configuration)
 1. [Executing](#executing)
    1. [Creating and Dropping Warehouses](#creating-and-dropping-warehouses)
@@ -16,23 +17,40 @@ Snowflake Database, Schema, and Warehouse provisioning
 
 ## Overivew
 
-This repository contains a Python-based Snowflake Database/Schema/Warehouse Provisioning script, that provides a frame-work for deploying objects with configurable and customizable access roles.
-
+This repository contains a Python-based Snowflake Database/Schema/Warehouse Provisioning script, that provides a
+framework for deploying objects with configurable and customizable access roles.
 ![Provisioning of Database, Schema, and Warehouse Objects](images/Diagram1.png)
-
 Snowflake supports a highly granular and configurable RBAC[^1] (Role-Based Access Control) scheme.
 The posibilities of configuration are endless and it is almost too complex to understand when you are new to Snowflake.
 `sf_create_obj` aims to provide an example of an implementation that can be easily extended while showing all sql
 commands used to build out the framework with. This also allows for easy integration with
-[schemachange](https://github.com/Snowflake-Labs/schemachange)/Formerly
+[schemachange](https://github.com/Snowflake-Labs/schemachange)/
 [Snowchange](https://jeremiahhansen.medium.com/snowchange-a-database-change-management-tool-b9f0b786a7da) as both deploy
-and rollback output is provided. 
+and rollback output is provided.
 
+### Functional and Access roles
 
+Best practice as recommended by Snowflake is to separate functional access from the underlying object access, i.e.,
+database, schema, individual tables, etc.
 
-The naming convention of using a postfix of _AR for access roles and a postfix _FR for functional roles provides clear separation between roles. In order for the access roles to show up towards the end of your role drop-downs in both the Snowflake Classic UI and Snowsight all roles are prefixed with a single underscore and is configurable so a database can be prefixed with \_DB\_ and a warehouse with \_WH\_ separately. 
+Functional access can be defined as a role that a script or user needs to perform and operation across many schemas or
+databases. In the examples provided all functional roles have a postfix of _FR in the role name. 
 
-Inheritance between access roles is setup based on configurable parameters and is managed between database and schemas as a simplified illustration below shows:
+Access roles govern access to a privilege on an object. An example is an access role that provides write access to all
+tables in a schema. Access roles often are nested and a role at a database level can provide access to all underlying
+schemas. That means rather than explicitly granting a privilege it can be inherited from another role. A common
+convention that is followed here is to use a postfix of _AR to signify an access role. 
+
+Using _AR and _FR to provide clear separation between roles makes it easier to quickly see the difference when looking
+at the roles in Snowflake. Taking this one step further to simplify how your roles are shown in both Snowflake's
+Classic UI as well as Snowsight this framework allows you to prefix access roles with a custom name which includes an
+underscore (_). This puts the access roles at the end of the role list and helps avoid users using access roles
+directly. Having a customizable prefix also allows us to think ahead to the automation of functional roles. In the
+sample configuration database access roles are prefixed by \_DB\_, schema access roles with \_SC\_, and warehouses
+with \_WH\_ respectively. 
+
+Inheritance between database and schema access roles is setup based on configurable parameters and is managed
+automatically between database and schemas as a simplified illustration below shows:
 
 ![Provisioned Access Role Hierarchy between Database, Schema, and warehouse](images/Diagram2.png)
 
