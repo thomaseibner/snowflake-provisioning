@@ -37,10 +37,10 @@ database, schema, individual tables, etc.
 Functional access can be defined as a role that a script or user needs to perform and operation across many schemas or
 databases. In the examples provided all functional roles have a postfix of \_FR in the role name. 
 
-Access roles govern access to a privilege on an object. An example is an access role that provides write access to all
-tables in a schema. Access roles often are nested and a role at a database level can provide access to all underlying
-schemas. That means rather than explicitly granting a privilege it can be inherited from another role. A common
-convention that is followed here is to use a postfix of \_AR to signify an access role. 
+Access roles govern access to one or more privileges on an object. An example is an access role that provides write
+access to all tables in a schema. Access roles often are nested and a role at a database level can provide access to
+all underlying schemas. That means rather than explicitly granting a privilege it can be inherited from another role.
+A common convention that is followed here is to use a postfix of \_AR to signify an access role. 
 
 Using \_AR and \_FR to provide clear separation between roles makes it easier to quickly see the difference when looking
 at the roles in Snowflake. Taking this one step further to simplify how your roles are shown in both Snowflake's
@@ -178,9 +178,9 @@ into a snowchange/schemachange pipeline for execution.
 
 ### Creating and Dropping Warehouses
 
-The simplest way to show how a sample warehouse could be provisioned is to run the script with the
-[default configuration](wh-config.json) and simply provide a name. As part of the validation the script performs
-on the parameters for each type of object the name is validated against the allowed object names in Snowflake. 
+The simplest way to show how a warehouse could be provisioned is to run the script with the
+[default configuration](wh-config.json) providing a warehouse name. The name of the object is validated against
+allowed object names as part of the validation the script performs on each parameter.
 ```
 $ ./sf_create_obj warehouse TEST_WH
 CREATE WAREHOUSE IF NOT EXISTS TEST_WH
@@ -239,32 +239,35 @@ DROP WAREHOUSE IF EXISTS TEST_WH;
 
 ## Automating Functional Roles
 
-Building an automatic tool to provision and maintain functional roles is straight forward when you consistently deploy database and schema objects with the appropriate access roles.
+Building an automated tool to provision and maintain functional roles is straight forward when you consistently
+deploy database, schema, and warehouse objects with the appropriate access roles. If your provisioning of objects
+is entirely governed by a the consistent naming convention `sf_create_obj` provides you can make it even simpler
+based on the available access roles in the account.
 
-```
+A simple flow of how the managing of roles could work:
+
+```SQL
+SHOW ROLES LIKE '_DB_%_AR';
+SHOW ROLES LIKE '_SC_%_AR';
+SHOW ROLES LIKE '_WH_%_AR';
+-- Finding possible access roles for a given DATABASE/SCHEMA:
+SHOW FUTURE GRANTS IN DATABASE <DB>;
+SHOW FUTURE GRANTS IN SCHEMA <DB.SC>;
 -- Checking which access roles have been granted to a functional role:
-SHOW GRANTS ON TEST_READER_FR;
--- Finding possible access roles for a given DATABASE:
-SHOW FUTURE GRANTS IN DATABASE;
-SHOW FUTURE GRANTS IN DATABASE.SCHEMA;
+SHOW GRANTS TO ROLE <FUNCTIONAL_ROLE>;
+-- add/remove grants as needed
 ```
-If your provisioning of objects is entirely governed by a the consistent naming convention `sf_create_obj` provides you can make it even simpler based on the available access roles in the account:
-
-```
-show roles like '_%_AR'
-parse output
-for each role you care about:
-  show grants to role
-  add/remove grants needed
-
-```
-
 
 ## TODO 
 
+- [ ] Build out functional role provisioning tool
+      - Provisiong functional roles based on configuration
+- [ ] Build out role-based access control visual explorer
+      - Display: Native Users (ACCOUNTADMIN, SYSADMIN, etc), SCIM groups, FR, AR, DB, SC, WH
 - [ ] Simplifying code to allow for a single role at each object level [sfprovisioning.py](sfprovisioning.py)/create\_%\_r2r\_grants
 - [ ] Currently does not support "GRANT ALL ON ALL PIPES IN SCHEMA", tags, search optimizations.
 - [ ] Currently does not support quoted object names in Snowflake.
+- [ ] Validate max length of role
 
 ## Author
 
@@ -281,8 +284,5 @@ Ryan Wieber @ Snowflake likewise for entertaining my questions and having a lot 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this tool except in compliance with the License. You may obtain a copy of the License at: http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-
-
-
 
 [^1]: https://docs.snowflake.com/en/user-guide/security-access-control-overview.html
