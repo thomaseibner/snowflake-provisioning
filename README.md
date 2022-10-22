@@ -268,6 +268,7 @@ SHOW GRANTS TO ROLE <FUNCTIONAL_ROLE>;
 - [ ] Currently does not support "GRANT ALL ON ALL PIPES IN SCHEMA", tags, search optimizations.
 - [ ] Currently does not support quoted object names in Snowflake.
 - [ ] Validate max length of role
+- [ ] Build out access roles to handle account level privileges
 
 ## Author
 
