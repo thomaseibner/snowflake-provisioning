@@ -1,0 +1,57 @@
+CREATE OR REPLACE PROCEDURE "UPDATE_ALLFUTUREGRANTSSC"()
+RETURNS BOOLEAN
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS '
+    DECLARE
+        c1 cursor for select * from snowflake.account_usage.schemata
+	               where schema_owner not in (''ACCOUNTADMIN'')
+		         and schema_name not like ''%-%''
+			 and schema_name not in (''INTERNAL'',''PUBLIC'',''INFORMATION_SCHEMA'')
+			 and catalog_name not in (''DEMO_DB'')
+			 and deleted is null
+		       order by catalog_name, schema_name desc;
+        db_nm varchar;
+        sc_nm varchar;
+	db_sc varchar;
+    BEGIN
+        -- Set this so the temp table is created with case insensitive columns
+        alter session set QUOTED_IDENTIFIERS_IGNORE_CASE=true;
+	-- Keep track so we can create the tmp_allfuturegrantssc table    
+        let counter := 0;
+        for record in c1 do 
+	    db_nm := record.catalog_name;
+	    sc_nm := record.schema_name;
+	    db_sc := :db_nm || ''.'' || :sc_nm;
+            execute immediate ''show future grants in schema '' || :db_sc;
+
+            if (counter = 0) then
+	        create or replace table tmp_allfuturegrantssc as
+		  select :db_nm as db_name,
+		         :sc_nm as sc_name,
+			     :db_sc as db_sc,
+		         *
+                    from table(result_scan(last_query_id()));
+		alter table tmp_allfuturegrantssc alter column db_name type varchar();
+		alter table tmp_allfuturegrantssc alter column sc_name type varchar();
+		alter table tmp_allfuturegrantssc alter column db_sc type varchar();
+            else 
+                insert into tmp_allfuturegrantssc
+		  select :db_nm as db_name,
+		         :sc_nm as sc_name,
+			 :db_sc as db_sc,
+		         *
+                    from table(result_scan(last_query_id()));
+            end if;
+            counter := counter + 1;
+        end for;
+
+        -- swap tables in place
+	-- helps if there is ever a change in the results returned from show future grants
+        alter table tmp_allfuturegrantssc swap with allfuturegrantssc;
+	drop table tmp_allfuturegrantssc;
+
+        return 1;
+    END;
+
+';

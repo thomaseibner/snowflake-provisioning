@@ -1,0 +1,4 @@
+CREATE OR REPLACE task UPD_ALLFUTUREGRANTSDB_TSK
+	schedule='USING CRON 0 0 * * * UTC'
+	user_task_managed_initial_warehouse_size = 'X-Small'
+	as CALL UPDATE_ALLFUTUREGRANTSDB();

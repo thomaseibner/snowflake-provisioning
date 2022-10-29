@@ -1,0 +1,19 @@
+CREATE OR REPLACE PROCEDURE "UPDATE_ALLGRANTSWH"()
+RETURNS BOOLEAN
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS '
+    BEGIN
+        -- Set this so the temp table is created with case insensitive columns
+        alter session set QUOTED_IDENTIFIERS_IGNORE_CASE=true;
+	create or replace table tmp_allgrantswh as
+	  select name as wh_name,* from snowflake.account_usage.grants_to_roles
+	   where deleted_on is null and granted_on = ''WAREHOUSE'';
+	
+        alter table tmp_allgrantswh swap with allgrantswh;
+	drop table tmp_allgrantswh;
+
+        return 1;
+    END;
+
+';

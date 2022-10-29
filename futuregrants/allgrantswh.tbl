@@ -1,0 +1,4 @@
+-- placeholder to initialize table
+CREATE OR REPLACE TABLE ALLGRANTSWH (
+	WH_NAME VARCHAR(255)
+);
