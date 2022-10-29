@@ -269,6 +269,7 @@ SHOW GRANTS TO ROLE <FUNCTIONAL_ROLE>;
 - [ ] Currently does not support quoted object names in Snowflake.
 - [ ] Validate max length of role
 - [ ] Build out access roles to handle account level privileges
+- [ ] Should sf\_drop\_obj handle revoking grants of a role that is being dropped? 
 
 ## Author
 
