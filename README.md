@@ -323,16 +323,15 @@ GRANT ROLE _WH_TEST_WH_USE_AR TO ROLE TEST_READER_FR;
 GRANT ROLE _SC_TEST_DB_TEST_SC_RO_AR TO ROLE TEST_READER_FR;
 
 ```
-This means if we put the sql statements either in a schemachange pipeline or directly in the Snowflake UI you'd 
+That means if we put the sql statements either in a schemachange pipeline or directly in the Snowflake UI you'd 
 create the role and grant the appropriate access roles to the functional role. If someone happened to grant a 
-role you did not want the functional role to have access to, the script will detect this and remove the role as
+role you did not want the functional role to have access to, the script will detect this and remove the grant as
 it is not part of the configuration.
 
 ## TODO 
 
-- [x] Build our functional role configuration generator using existing roles in Snowflake
+- [x] Build out functional role configuration generator using existing roles in Snowflake
 - [x] Build out functional role provisioning tool
-      - Provisiong functional roles based on configuration
 - [ ] Build out role-based access control visual explorer
       - Display: Native Users (ACCOUNTADMIN, SYSADMIN, etc), SCIM groups, FR, AR, DB, SC, WH
 - [ ] Simplifying code to allow for a single role at each object level [sfprovisioning.py](sfprovisioning.py)/create\_%\_r2r\_grants
