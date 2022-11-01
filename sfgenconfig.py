@@ -16,11 +16,6 @@ class SfGenConfig():
         else:
             self.roles = roles
 
-        # prefixes are not used in sf_genrole
-#        self.db_prefix = self.cfg.db.config['AR_PREFIX']
-#        self.sc_prefix = self.cfg.sc.config['AR_PREFIX']
-#        self.wh_prefix = self.cfg.wh.config['AR_PREFIX']
-
     def list_roles(self):
         return self.roles
 
@@ -49,17 +44,17 @@ class SfGenConfig():
         union_sql = ",".join(union_arr)
     
         wh_roles = {}
-        cursor = self.sf_conn.run_query(f"select distinct grantee_name, wh_name\n  from allgrantswh where grantee_name in ({union_sql})")
+        cursor = self.sf_conn.run_query(f"select distinct grantee_name, wh_name\n  from allgrantswh where grantee_name in ({union_sql}) order by wh_name asc")
         for row in cursor:
             wh_roles[row[0]] = row[1]
             old_roles_dict[row[0]] = 0
         sc_roles = {}
-        cursor = self.sf_conn.run_query(f"select distinct grantee_name, db_name, sc_name, db_sc\n  from allfuturegrantssc where grantee_name in ({union_sql})")
+        cursor = self.sf_conn.run_query(f"select distinct grantee_name, db_name, sc_name, db_sc\n  from allfuturegrantssc where grantee_name in ({union_sql}) order by db_sc asc")
         for row in cursor:
             sc_roles[row[0]] = row
             old_roles_dict[row[0]] = 0
         db_roles = {}
-        cursor = self.sf_conn.run_query(f"select * from allfuturegrantsdb where grantee_name in ({union_sql})")
+        cursor = self.sf_conn.run_query(f"select * from allfuturegrantsdb where grantee_name in ({union_sql}) order by db_name asc")
         for row in cursor:
             db_roles[row[0]] = row
             old_roles_dict[row[0]] = 0

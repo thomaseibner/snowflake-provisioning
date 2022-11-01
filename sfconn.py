@@ -1,4 +1,5 @@
 import snowflake.connector as sf
+from snowflake.connector.errors import DatabaseError
 import os
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -84,11 +85,9 @@ class SfConn():
         try:
             curs.execute(query)
         except sf.errors.ProgrammingError as e:
-            # default error message
-            err_msg = f"DB Error when running query: '{query}': {e}"
-            print(err_msg)
-            exit(2)
-            #raise sf.errors.ProgrammingError(err_msg)
+            #err_msg = f"DB Error when running query: '{query}': {e}"
+            #print(err_msg)
+            raise e
         return curs
 
     def run_multiple_queries(self, query, cursor = None):

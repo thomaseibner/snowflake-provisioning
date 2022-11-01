@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+
+#import numpy as np
+from sfconfig import SfConfig
+from sfconn import SfConn
+from sfprovisionconfig import SfProvisionConfig
+from sffuncrole import SfFuncRole
+import re
+
+# Load configuration for provisioning
+prov_cfg = SfProvisionConfig()
+
+# Validate the configuration
+try:
+    prov_cfg.validate_config()
+except ValueError:
+    print("Configuration problem exiting")
+    exit(-1)
+
+# Basic checks for functional roles have already been done
+#   [x] check that the role in each include type is a valid role in the db/sc/wh provision cfg
+#   [x] check that a db include/exclude has database name
+#   [x] check that a sc include/exclude has database and schema name
+#   [x] check that a wh include/exclude has warehouse name
+# Excludes do not span db and schema
+#   So you can't remove a whole db of schemas easily
+
+sf_cfg = SfConfig('config.json')
+sf_conn = SfConn(sf_cfg.config)
+
+func_role = SfFuncRole(prov_cfg, sf_conn)
+
+froles = func_role.list_roles()
+for frole in froles:
+    func_role.gen_role_delta(frole)
+
+sf_conn.close_conn()
+

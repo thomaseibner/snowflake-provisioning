@@ -263,7 +263,7 @@ SHOW GRANTS TO ROLE <FUNCTIONAL_ROLE>;
 ```
 
 Building an automated tool to provision and maintain functional roles is a much more scalable solution. If you 
-use `sf\_create\_obj` for databases, schema, and warehouses provisioning with access roles it is easier to 
+use `sf_create_obj` for databases, schema, and warehouses provisioning with access roles it is easier to 
 govern that your roles only have access to what you specifically want. It will enable you to have your 
 provisioning script that can be run over and over again validating that the role only has access to what you have
 configured it for.
@@ -273,19 +273,19 @@ configured it for.
 It would be easier if Snowflake provided queryable access to future grants, but since they do not yet I've built
 out 3 sets of sql-based stored procedures in the [grants/](grants/) directory of this repository. They make future 
 grants for databases and schemas available in simple tables to query. The stored procedures materializes the output 
-from `show future grants in database \<DB\>;`, `show future grants in \<DB\>.\<SC\>`, and the specific grants to all 
-warehouses based on the `snowflake.account\_usage.grants\_to\_roles`. They are future proofed in that they recreate 
+from `show future grants in database <DB>;`, `show future grants in <DB>.<SC>`, and the specific grants to all 
+warehouses based on the `snowflake.account_usage.grants_to_roles`. They are future proofed in that they recreate 
 the table that temporarily stores the data and then swaps the table with the temporary table. When/If Snowflake decides 
-to make future grants queryable this step can be eliminated.
+to make future grants queryable through account_usage tables this step can be eliminated.
 
 Having the data available also means we can validate in bulk that future grants based on the above provisioning
 configuration is correct and hasn't been tampered with. This will be useful for security auditing of the configuration.
 
 ### Generating Configuration
 
-With appropriate access roles and functional roles already in Snowflake the `sf\_genrole` script will extract the 
-access roles and generate a configuration file that can be used to maintain the role(s) going forward. Using the sample
-data already provisioned for the test role earlier, we can extract the configuration like this:
+With appropriate access roles and functional roles already in Snowflake the `sf_genrole` script will extract the 
+access roles and generate a configuration file that can be used to maintain the role(s) going forward. Using the 
+sample data already provisioned for the test role earlier, we can extract the configuration like this:
 
 ```
 $ ./sf_genrole TEST_READER_FR
@@ -304,15 +304,34 @@ $ ./sf_genrole TEST_READER_FR
 }
 ```
 
+It doesn't currently deal with custom grants that are not granted against an access role. 
 
 ### Provisioning Functional Role
 
+The configuration for the above can be used with the `sf_funcrole` script to determine how an existing role
+needs to be modified in order for it to fit the configuration. The script doesn't take any specific options
+and simply depends on a `fr-config.json` file in the current directory. You could have multiple files in 
+different directories to get around this. If you started with the role not present in Snowflake, but the
+schema and warehouse provisioned and the appropriate tables populated with future grants from the 
+[grants/](grants/) directory the output of the script would look like this:
 
+```
+$ ./sf_funcrole
+-- error when fetching grants for TEST_READER_FR -- role does not exist: 2003
+CREATE ROLE TEST_READER_FR IF NOT EXISTS;
+GRANT ROLE _WH_TEST_WH_USE_AR TO ROLE TEST_READER_FR;
+GRANT ROLE _SC_TEST_DB_TEST_SC_RO_AR TO ROLE TEST_READER_FR;
+
+```
+This means if we put the sql statements either in a schemachange pipeline or directly in the Snowflake UI you'd 
+create the role and grant the appropriate access roles to the functional role. If someone happened to grant a 
+role you did not want the functional role to have access to, the script will detect this and remove the role as
+it is not part of the configuration.
 
 ## TODO 
 
 - [x] Build our functional role configuration generator using existing roles in Snowflake
-- [ ] Build out functional role provisioning tool
+- [x] Build out functional role provisioning tool
       - Provisiong functional roles based on configuration
 - [ ] Build out role-based access control visual explorer
       - Display: Native Users (ACCOUNTADMIN, SYSADMIN, etc), SCIM groups, FR, AR, DB, SC, WH
