@@ -6,7 +6,7 @@ Functional Roles.
 ## Table of Contents
 
 The documentation has been split out into two separate sections - the first section is for provisioning Databases, Schemas,
-and Warehouses. The second section covers scripted provisioning of functioanl roles and how to generate the configuration. 
+and Warehouses. The second section covers scripted provisioning of functional roles and how to generate the configuration. 
 
 1. [Overview of Provisioning Database, Schema, and Warehouse objects](#overview-of-provisioning-database,-schema,-and-warehouse-objects)
    1. [Functional and Access roles](#functional-and-access-roles)
@@ -30,7 +30,7 @@ This repository contains a Python-based Snowflake Database/Schema/Warehouse Prov
 framework for deploying objects with configurable and customizable access roles.
 ![Provisioning of Database, Schema, and Warehouse Objects](images/Diagram1.png)
 Snowflake supports a highly granular and configurable RBAC[^1] (Role-Based Access Control) scheme.
-The posibilities of configuration are endless and it is almost too complex to understand when you are new to Snowflake.
+The possibilities of configuration are endless and it is almost too complex to understand when you are new to Snowflake.
 `sf_create_obj` aims to provide an example of an implementation that can be easily extended while showing all sql
 commands used to build out the framework with. This also allows for easy integration with
 [schemachange](https://github.com/Snowflake-Labs/schemachange)/
