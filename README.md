@@ -1,28 +1,36 @@
 # snowflake-provisioning
 
-Snowflake Database, Schema, and Warehouse provisioning
+Provisioning of Snowflake Database, Schema, and Warehouse objects with Access Roles & Generating and Provisioning of
+Functional Roles. 
 
 ## Table of Contents
 
-1. [Overview](#overview)
+The documentation has been split out into two separate sections - the first section is for provisioning Databases, Schemas,
+and Warehouses. The second section covers scripted provisioning of functional roles and how to generate the configuration. 
+
+1. [Overview of Provisioning Database, Schema, and Warehouse objects](#overview-of-provisioning-database,-schema,-and-warehouse-objects)
    1. [Functional and Access roles](#functional-and-access-roles)
    1. [Creating a Functional role](#creating-a-functional-role)
-1. [Configuration](#configuration)
-1. [Executing](#executing)
+   1. [Configuration](#configuration)
+   1. [Executing](#executing)
    1. [Creating and Dropping Warehouses](#creating-and-dropping-warehouses)
-1. [Automating](#automating_functional_roles)
+1. [Automating Functional Roles](#automating_functional_roles)
+   1. [Stored Procedures to make future grants queryable](#stored-procedures-to-make-future-grants-queryable)
+   1. [Generating Configuration](#generating_configuration)
+   1. [Provisioning Functional Role](#provisioning_functional_role)
+
 1. [TODO](#todo)
 1. [Author](#author)
 1. [Credits](#credits)
 1. [License](#license)
 
-## Overview
+## Overview of Provisioning Database, Schema, and Warehouse objects
 
 This repository contains a Python-based Snowflake Database/Schema/Warehouse Provisioning script, that provides a
 framework for deploying objects with configurable and customizable access roles.
 ![Provisioning of Database, Schema, and Warehouse Objects](images/Diagram1.png)
 Snowflake supports a highly granular and configurable RBAC[^1] (Role-Based Access Control) scheme.
-The posibilities of configuration are endless and it is almost too complex to understand when you are new to Snowflake.
+The possibilities of configuration are endless and it is almost too complex to understand when you are new to Snowflake.
 `sf_create_obj` aims to provide an example of an implementation that can be easily extended while showing all sql
 commands used to build out the framework with. This also allows for easy integration with
 [schemachange](https://github.com/Snowflake-Labs/schemachange)/
@@ -88,13 +96,13 @@ warehouse TEST\_WH, use the database TEST\_DB, use the schema TEST\_SC, as well 
 TEST\_SC schema. 
 
 With this flexibility it is possible to manage just a few functional roles that provides the exact access you want
-across hundreds of databases and schemas through simple automation.
+across hundreds of databases and schemas through simple automation. 
 
 This documentation doesn't aim to spell out a specific architectural strategy on how to separate environments in a
 single Snowflake account, but gives you the flexibility to solve that yourself through your own naming convention.
 An example is embedding PROD/TEST/DEV in your database name either as a prefix or embedded in the name. 
 
-## Configuration
+### Configuration
 
 Each of the 3 types of objects that can be provisioned with this script need their own json-formatted configuration
 file ([db-config.json](db-config.json), [sc-config.json](sc-config.json), [wh-config.json](wh-config.json)). 
@@ -128,7 +136,7 @@ The default [configuration](wh-config.json) for a warehouse is provided below:
 ```
 As described earlier the configuration of the provisioning tool allows you to create multiple different types of access roles. If you want to customize a special role that allows it to execute stored procedures and tasks, but not directly write to tables that is possible as long as you can specify it in Snowflake grant terms. 
 
-## Executing
+### Executing
 
 Embedded help is provided with the script:
 
@@ -239,12 +247,8 @@ DROP WAREHOUSE IF EXISTS TEST_WH;
 
 ## Automating Functional Roles
 
-Building an automated tool to provision and maintain functional roles is straight forward when you consistently
-deploy database, schema, and warehouse objects with the appropriate access roles. If your provisioning of objects
-is entirely governed by a the consistent naming convention `sf_create_obj` provides you can make it even simpler
-based on the available access roles in the account.
-
-A simple flow of how the managing of roles could work:
+Manually maintaining the necessary grants is relatively straight forward, but doesn't scale when you have many 
+functional roles and deployed databases/schemas. That being said a simple flow could work like the following:
 
 ```SQL
 SHOW ROLES LIKE '_DB_%_AR';
@@ -258,10 +262,76 @@ SHOW GRANTS TO ROLE <FUNCTIONAL_ROLE>;
 -- add/remove grants as needed
 ```
 
+Building an automated tool to provision and maintain functional roles is a much more scalable solution. If you 
+use `sf_create_obj` for databases, schema, and warehouses provisioning with access roles it is easier to 
+govern that your roles only have access to what you specifically want. It will enable you to have your 
+provisioning script that can be run over and over again validating that the role only has access to what you have
+configured it for.
+
+### Stored Procedures to make future grants queryable
+
+It would be easier if Snowflake provided queryable access to future grants, but since they do not yet I've built
+out 3 sets of sql-based stored procedures in the [grants/](grants/) directory of this repository. They make future 
+grants for databases and schemas available in simple tables to query. The stored procedures materializes the output 
+from `show future grants in database <DB>;`, `show future grants in <DB>.<SC>`, and the specific grants to all 
+warehouses based on the `snowflake.account_usage.grants_to_roles`. They are future proofed in that they recreate 
+the table that temporarily stores the data and then swaps the table with the temporary table. When/If Snowflake decides 
+to make future grants queryable through account_usage tables this step can be eliminated.
+
+Having the data available also means we can validate in bulk that future grants based on the above provisioning
+configuration is correct and hasn't been tampered with. This will be useful for security auditing of the configuration.
+
+### Generating Configuration
+
+With appropriate access roles and functional roles already in Snowflake the `sf_genrole` script will extract the 
+access roles and generate a configuration file that can be used to maintain the role(s) going forward. Using the 
+sample data already provisioned for the test role earlier, we can extract the configuration like this:
+
+```
+$ ./sf_genrole TEST_READER_FR
+{
+  "TEST_READER_FR" : {
+    "ORDER" : "INCEXC",
+    "INCLUDE" : [
+      { "TYPE" : "SCHEMA", "DATABASE" : "TEST_DB", "SCHEMA" : "TEST_SC", "ROLE" : "RO" },
+      { "TYPE" : "WAREHOUSE", "WAREHOUSE" : "TEST_WH", "ROLE" : "RO" }
+    ],
+    "EXCLUDE" : [],
+    "CUSTOM_INCLUDE" : [  ],
+    "CUSTOM_EXCLUDE" : [],
+    "SCIM_ROLES" : []
+  }
+}
+```
+
+It doesn't currently deal with custom grants that are not granted against an access role. 
+
+### Provisioning Functional Role
+
+The configuration for the above can be used with the `sf_funcrole` script to determine how an existing role
+needs to be modified in order for it to fit the configuration. The script doesn't take any specific options
+and simply depends on a `fr-config.json` file in the current directory. You could have multiple files in 
+different directories to get around this. If you started with the role not present in Snowflake, but the
+schema and warehouse provisioned and the appropriate tables populated with future grants from the 
+[grants/](grants/) directory the output of the script would look like this:
+
+```
+$ ./sf_funcrole
+-- error when fetching grants for TEST_READER_FR -- role does not exist: 2003
+CREATE ROLE TEST_READER_FR IF NOT EXISTS;
+GRANT ROLE _WH_TEST_WH_USE_AR TO ROLE TEST_READER_FR;
+GRANT ROLE _SC_TEST_DB_TEST_SC_RO_AR TO ROLE TEST_READER_FR;
+
+```
+That means if we put the sql statements either in a schemachange pipeline or directly in the Snowflake UI you'd 
+create the role and grant the appropriate access roles to the functional role. If someone happened to grant a 
+role you did not want the functional role to have access to, the script will detect this and remove the grant as
+it is not part of the configuration.
+
 ## TODO 
 
-- [ ] Build out functional role provisioning tool
-      - Provisiong functional roles based on configuration
+- [x] Build out functional role configuration generator using existing roles in Snowflake
+- [x] Build out functional role provisioning tool
 - [ ] Build out role-based access control visual explorer
       - Display: Native Users (ACCOUNTADMIN, SYSADMIN, etc), SCIM groups, FR, AR, DB, SC, WH
 - [ ] Simplifying code to allow for a single role at each object level [sfprovisioning.py](sfprovisioning.py)/create\_%\_r2r\_grants
@@ -269,6 +339,7 @@ SHOW GRANTS TO ROLE <FUNCTIONAL_ROLE>;
 - [ ] Currently does not support quoted object names in Snowflake.
 - [ ] Validate max length of role
 - [ ] Build out access roles to handle account level privileges
+- [ ] Should sf\_drop\_obj handle revoking grants of a role that is being dropped? 
 
 ## Author
 

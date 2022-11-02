@@ -1,0 +1,26 @@
+{
+    "TEST_READER_FR" : {
+	"ORDER" : "INCEXC",
+	"INCLUDE" : [
+	    { "TYPE" : "WAREHOUSE", "WAREHOUSE" : "TEST_WH", "ROLE" : "USE" },
+	    { "TYPE" : "SCHEMA", "DATABASE" : "TEST_DB", "SCHEMA" : "TEST_SC", "ROLE" : "RW" }
+	],
+	"EXCLUDE" : [
+	    { "TYPE" : "DATABASE", "DATABASE" : "SENSITIVE_DB" }
+	],
+	"CUSTOM_INCLUDE" : [],
+	"CUSTOM_EXCLUDE" : [],
+	"SCIM_ROLES" : []
+    },
+    "TEST_MODIFY_ALL_WH_FR" : {
+	"ORDER" : "INCEXC",
+	"INCLUDE" : [
+	    { "TYPE" : "WAREHOUSE", "WAREHOUSE" : "%_WH", "ROLE" : "MOD" }
+	],
+	"EXCLUDE" : [
+	],
+	"CUSTOM_INCLUDE" : [],
+	"CUSTOM_EXCLUDE" : [],
+	"SCIM_ROLES" : []
+    }
+}

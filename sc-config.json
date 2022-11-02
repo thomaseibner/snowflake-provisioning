@@ -3,7 +3,9 @@
 	"ROLE_OWNER"       : "SYSADMIN",
 	"ROLE_HIERARCHY"   : [ "ADM", "RW", "RX", "RO" ],
         "ROLE_PERMISSIONS" : {
-	                       "ADM" : { "ALL" : [ ] },
+	                       "ADM" : {
+		                         "ALL" : [ ]
+		                       },
 	                       "RW"  : { "ALL" : [
 		                                   "TABLES",
 				                   "EXTERNAL TABLES",

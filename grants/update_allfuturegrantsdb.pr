@@ -1,0 +1,41 @@
+CREATE OR REPLACE PROCEDURE "UPDATE_ALLFUTUREGRANTSDB"()
+RETURNS BOOLEAN
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS '
+    DECLARE
+        c1 cursor for select database_name
+	                from information_schema.databases
+		       where database_owner not in (''ACCOUNTADMIN'');
+        db_nm varchar;
+    BEGIN
+        -- Set this so the temp table is created with case insensitive columns
+        alter session set QUOTED_IDENTIFIERS_IGNORE_CASE=true;
+	-- Keep track so we can create the tmp_allfuturegrantsdb table    
+        let counter := 0;
+        for record in c1 do 
+            execute immediate ''show future grants in database '' || record.database_name;
+	    db_nm := record.database_name;
+
+            if (counter = 0) then
+	        create or replace table tmp_allfuturegrantsdb as
+		  select :db_nm as db_name, *
+                    from table(result_scan(last_query_id()));
+		alter table tmp_allfuturegrantsdb alter column db_name type varchar();
+            else 
+                insert into tmp_allfuturegrantsdb
+                  select :db_nm as db_name, *
+                    from table(result_scan(last_query_id()));
+            end if;
+            counter := counter + 1;
+        end for;
+
+        -- swap tables in place
+	-- helps if there is ever a change in the results returned from show future grants
+        alter table tmp_allfuturegrantsdb swap with allfuturegrantsdb;
+	drop table tmp_allfuturegrantsdb;
+
+        return 1;
+    END;
+
+';

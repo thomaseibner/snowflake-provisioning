@@ -4,14 +4,32 @@ import numpy as np
 db_cfg_file = "db-config.json"
 sc_cfg_file = "sc-config.json"
 wh_cfg_file = "wh-config.json"
+fr_cfg_file = "fr-config.json"
 
 class SfProvisionConfig():
     """SfProvisionConfig parses database/schema/warehouse configuration and 
        builds out the statements required to provision objects."""
     def __init__(self):
-        self.db = SfConfig(db_cfg_file)
-        self.sc = SfConfig(sc_cfg_file)
-        self.wh = SfConfig(wh_cfg_file)
+        try:
+            self.db = SfConfig(db_cfg_file)
+        except Exception as e:
+            print(f"Error loading configuration from {db_cfg_file}: {str(e)}")
+            exit(-1)
+        try:
+            self.sc = SfConfig(sc_cfg_file)
+        except Exception as e:
+            print(f"Error loading configuration from {sc_cfg_file}: {str(e)}")
+            exit(-1)
+        try:
+            self.wh = SfConfig(wh_cfg_file)
+        except Exception as e:
+            print(f"Error loading configuration from {wh_cfg_file}: {str(e)}")
+            exit(-1)
+        try:
+            self.fr = SfConfig(fr_cfg_file)
+        except Exception as e:
+            print(f"Error loading configuration from {fr_cfg_file}: {str(e)}")
+            exit(-1)
         # Objects that will be populated 
         self.objects            = []
         self.drop_objects       = []
@@ -30,6 +48,9 @@ class SfProvisionConfig():
     def wh(self):
         return self.wh
 
+    def fr(self):
+        return self.fr
+    
     def validate_config(self):
         for cfg in [self.db, self.sc, self.wh]:
             if 'TYPE' not in cfg.config:
@@ -76,8 +97,101 @@ class SfProvisionConfig():
         if np.array_equal(self.db.config['ROLE_HIERARCHY'], self.sc.config['ROLE_HIERARCHY']) is False:
             print(f"ROLE_HIERARCHY between DB {self.db.config['ROLE_HIERARCHY']} and SC {self.sc.config['ROLE_HIERARCHY']} does not match in configuration files: {self.db.filename} and {self.sc.filename}")
             raise ValueError
+        # Validate functional role figuration
+        fr_cfg = self.fr
+        for frole in fr_cfg.config:
+            if 'ORDER' not in fr_cfg.config[frole]:
+                print(f"Missing ORDER in configuration for {frole} in configuration file: {fr_cfg.filename}")
+                raise ValueError
+            if 'INCLUDE' not in fr_cfg.config[frole]:
+                print(f"Missing INCLUDE in configuration for {frole} in configuration file: {fr_cfg.filename}")
+                raise ValueError
+            if 'EXCLUDE' not in fr_cfg.config[frole]:
+                print(f"Missing EXCLUDE in configuration for {frole} in configuration file: {fr_cfg.filename}")
+                raise ValueError
+            if 'CUSTOM_INCLUDE' not in fr_cfg.config[frole]:
+                print(f"Missing CUSTOM_INCLUDE in configuration for {frole} in configuration file: {fr_cfg.filename}")
+                raise ValueError
+            if 'CUSTOM_EXCLUDE' not in fr_cfg.config[frole]:
+                print(f"Missing CUSTOM_EXCLUDE in configuration for {frole} in configuration file: {fr_cfg.filename}")
+                raise ValueError
+            if 'SCIM_ROLES' not in fr_cfg.config[frole]:
+                print(f"Missing SCIM_ROLES in configuration for {frole} in configuration file: {fr_cfg.filename}")
+                raise ValueError
+            if type(fr_cfg.config[frole]['INCLUDE']) is not list:
+                print(f"INCLUDE is not a list in configuration for {frole} in configuration file: {fr_cfg.filename}")
+                raise ValueError
+            if type(fr_cfg.config[frole]['EXCLUDE']) is not list:
+                print(f"EXCLUDE is not a list in configuration for {frole} in configuration file: {fr_cfg.filename}")
+                raise ValueError
+            if type(fr_cfg.config[frole]['CUSTOM_INCLUDE']) is not list:
+                print(f"CUSTOM_INCLUDE is not a list in configuration for {frole} in configuration file: {fr_cfg.filename}")
+                raise ValueError
+            if type(fr_cfg.config[frole]['CUSTOM_EXCLUDE']) is not list:
+                print(f"CUSTOM_EXCLUDE is not a list in configuration for {frole} in configuration file: {fr_cfg.filename}")
+                raise ValueError
+            if type(fr_cfg.config[frole]['SCIM_ROLES']) is not list:
+                print(f"SCIM_ROLES is not a list in configuration for {frole} in configuration file: {fr_cfg.filename}")
+                raise ValueError
+            # Validate that the role types are valid for each object type based on their configuration
+            for inexclude in fr_cfg.config[frole]['INCLUDE'] + fr_cfg.config[frole]['EXCLUDE']:
+                if type(inexclude) is not dict:
+                    print(f"{str(inexclude)} not a dict in configuration file: {fr_cfg.filename}")
+                    raise ValueError
+                if 'TYPE' not in inexclude:
+                    print(f"Missing TYPE in configuration for {frole} in configuration file: {fr_cfg.filename}")
+                    raise ValueError
+                if not (inexclude['TYPE'] == 'DATABASE' or inexclude['TYPE'] == 'SCHEMA' or inexclude['TYPE'] == 'WAREHOUSE'):
+                    print(f"Invalid TYPE {inexclude['TYPE']} in configuration for {frole} in configuration file: {fr_cfg.filename}")
+                    raise ValueError
+
+            for include in fr_cfg.config[frole]['INCLUDE']:
+                if 'ROLE' not in include:
+                    print(f"Missing ROLE in configuration for {frole} in configuration file: {fr_cfg.filename}")
+                    raise ValueError
+                if include['TYPE'] == 'DATABASE':
+                    if include['ROLE'] not in self.db.config['ROLE_HIERARCHY']:
+                        print(f"DB role {include['ROLE']} for {frole} does not exist in db ROLE_HIERARCHY {self.db.config['ROLE_HIERARCHY']} in configuration file: {fr_cfg.filename}")
+                        raise ValueError
+                    if 'DATABASE' not in include:
+                        print(f"Database role missing DATABASE key for {frole} in configuration file: {fr_cfg.filename}")
+                        raise ValueError
+                if include['TYPE'] == 'SCHEMA':
+                    if include['ROLE'] not in self.sc.config['ROLE_HIERARCHY']:
+                        print(f"SC role {include['ROLE']} for {frole} does not exist in sc ROLE_HIERARCHY {self.sc.config['ROLE_HIERARCHY']} in configuration file: {fr_cfg.filename}")
+                        raise ValueError
+                    if 'DATABASE' not in include:
+                        print(f"Role missing DATABASE key for {frole} in configuration file: {fr_cfg.filename}")
+                        raise ValueError
+                    if 'SCHEMA' not in include:
+                        print(f"Role missing SCHEMA key for {frole} in configuration file: {fr_cfg.filename}")
+                        raise ValueError
+                if include['TYPE'] == 'WAREHOUSE':
+                    if include['ROLE'] not in self.wh.config['ROLE_HIERARCHY']:
+                        print(f"WH role {include['ROLE']} for {frole} does not exist in wh ROLE_HIERARCHY {self.wh.config['ROLE_HIERARCHY']} in configuration file: {fr_cfg.filename}")
+                        raise ValueError
+                    if 'WAREHOUSE' not in include:
+                        print(f"Warehouse role missing WAREHOUSE key for {frole} in configuration file: {fr_cfg.filename}")
+                        raise ValueError
+            for exclude in fr_cfg.config[frole]['EXCLUDE']:
+                if exclude['TYPE'] == 'DATABASE':
+                    if 'DATABASE' not in exclude:
+                        print(f"Database role missing DATABASE key for {frole} in configuration file: {fr_cfg.filename}")
+                        raise ValueError
+                if exclude['TYPE'] == 'SCHEMA':
+                    if 'DATABASE' not in exclude:
+                        print(f"Role missing DATABASE key for {frole} in configuration file: {fr_cfg.filename}")
+                        raise ValueError
+                    if 'SCHEMA' not in exclude:
+                        print(f"Role missing SCHEMA key for {frole} in configuration file: {fr_cfg.filename}")
+                        raise ValueError
+                if exclude['TYPE'] == 'WAREHOUSE':
+                    if 'WAREHOUSE' not in exclude:
+                        print(f"Warehouse role missing WAREHOUSE key for {frole} in configuration file: {fr_cfg.filename}")
+                        raise ValueError
 
 
+                    
     def apply_cmdline_args(self, cmdline):
         config = {}
         self.cmdline = cmdline
@@ -406,7 +520,9 @@ class SfProvisionConfig():
         for drops in self.drop_objects[::-1]:
             print(drops)
         
-    
+
+
+            
 if __name__ == "__main__":
     prov_cfg = SfProvisionConfig()
     # Validates the configuration

@@ -1,0 +1,4 @@
+-- placeholder to initialize table
+CREATE OR REPLACE TABLE ALLFUTUREGRANTSDB (
+	DB_NAME VARCHAR(255)
+);

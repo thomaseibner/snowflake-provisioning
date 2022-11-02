@@ -1,0 +1,8 @@
+{
+    "account"   : "<YOUR_SNOWFLAKE_ACCOUNT>",
+    "user"      : "your@login",
+    "warehouse" : "DEMO_WH",
+    "role"      : "DEMO_ROLE",
+    "database"  : "DEMO_DB",
+    "schema"    : "PUBLIC"
+}
