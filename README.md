@@ -310,7 +310,7 @@ It doesn't currently deal with custom grants that are not granted against an acc
 
 The configuration for the above can be used with the `sf_funcrole` script to determine how an existing role
 needs to be modified in order for it to fit the configuration. The script doesn't take any specific options
-and simply depends on a `fr-config.json` file in the current directory. You could have multiple files in 
+and simply depends on a [fr-config.json](fr-config.json) file in the current directory. You could have multiple files in 
 different directories to get around this. If you started with the role not present in Snowflake, but the
 schema and warehouse provisioned and the appropriate tables populated with future grants from the 
 [grants/](grants/) directory the output of the script would look like this:
@@ -327,6 +327,9 @@ That means if we put the sql statements either in a schemachange pipeline or dir
 create the role and grant the appropriate access roles to the functional role. If someone happened to grant a 
 role you did not want the functional role to have access to, the script will detect this and remove the grant as
 it is not part of the configuration.
+
+The configuration definition supports wild cards at the database, schema, and warehouse level, but you have to 
+specify the exact role type as defined in db-config.json/sc-config.json/wh-config.json. 
 
 ## TODO 
 
