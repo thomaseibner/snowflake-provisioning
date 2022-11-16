@@ -25,7 +25,66 @@ def auto_suspend_validate(string):
         return num
     raise ValueError
 
-class CmdlineParse():
+def db_sc_validate(string):
+    sf_val = SfValidator()
+    schema_match = sf_val.schema_parse(string)
+    if (schema_match['error'] == 1):
+        print(f"Error: {schema_match['error_text']}")
+        raise ValueError
+    if (schema_match['quoted_database'] is True): 
+        print(f"Database {schema_match['database']} has quotes, unsupported for now")
+        raise ValueError
+    if (schema_match['quoted_schema'] is True):
+        print(f"Schema {schema_match['schema']} has quotes, unsupported for now")
+        raise ValueError
+    # because we only support un-quoted for now this is how we handle names (upper):
+    # if there's quotes in schema or database we should keep the case
+    db_nm,sc_nm = schema_match['database'].upper(), schema_match['schema'].upper()
+    return [db_nm, sc_nm]
+
+class CmdlineParseExport():
+    def __init__(self):
+        parser = argparse.ArgumentParser(description='Snowflake Object Export Utility')
+        parser.add_argument('--list', action='store_true', help='List all Database.Schema in account')
+        parser.add_argument('--all', action='store_true', help='Export all Database.Schema')
+        parser.add_argument('--export_dir', type=str, default='./export', help='Name of base directory to export to')
+        parser.add_argument('--log_level', type=str, choices=['DEBUG','INFO','WARNING','ERROR','CRITICAL'], default='WARNING', help='Log Level to output')
+        parser.add_argument('--delete', action='store_true', help='Delete files no longer present in schema')
+        parser.add_argument('--database_schema', '--db_sc', type=db_sc_validate, help='Name(s) of Database.Schema to export', nargs='+')
+
+        self.parser = parser
+        self.args = parser.parse_args()
+        self.sf_val = SfValidator()
+        self.checkinput()
+        # decide later on below:
+        #if self.args.database_schema:
+        #    self.db_sc = self.args.database_schema
+        #else:
+        #    self.db_sc = []
+
+    def checkinput(self):
+        # db_sc needs to be checked, even if we use a different function for it
+        # database_schema should actually be populated and not just the global variable from main script
+        if self.args.list is not True and self.args.all is not True and self.args.database_schema is None:
+            self.parser.print_help()
+            exit(0)
+        if self.args.list is True and self.args.all is True:
+            print("Cannot use both --all and --list argument at the same time")
+            self.parser.print_help()
+            exit(0)
+        if self.args.database_schema is not None and self.args.list is True:
+            print("Cannot specify --database_schema and --list at the same time")
+            self.parser.print_help()
+            exit(0)
+        if self.args.database_schema is not None and self.args.all is True:
+            print("Cannot specify --database_schema and --all at the same time")
+            self.parser.print_help()
+            exit(0)
+        # transfer how-ever database_schema looks like into the array db_sc from main program, but stupid to do this twice
+        # can we convert to same datamodel?
+
+
+class CmdlineParseCreateDrop():
     """CmdlineParse parses the command line options required to provision
        a database/schema/warehouse and validates the parameters are valid."""
     def __init__(self):
