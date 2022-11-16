@@ -56,7 +56,7 @@ class SfValidator():
         db_match = re.compile('(' + self._name_pat + ')')
         match = db_match.findall(text)
         state = {'error': 0, 'quoted_database': False}
-        if (match is False):
+        if match is False or len(match) == 0:
             state['error'] = 1
             state['error_text'] = f"no match: {text}"
             return state
@@ -74,10 +74,10 @@ class SfValidator():
         return self.schema_pat.fullmatch(text)
     
     def schema_parse(self, text):
-        schema_match = re.compile('(?:(' + self._name_pat + ')\.)?(' + self._name_pat + ')')
+        schema_match = re.compile('^(?:(' + self._name_pat + ')\.)(' + self._name_pat + ')$')
         match = schema_match.findall(text)
         state = {'error': 0, 'quoted_database': False, 'quoted_schema': False}
-        if (match is False):
+        if match is False or len(match) == 0:
             state['error'] = 1
             state['error_text'] = f"no match: {text}"
             return state
