@@ -14,11 +14,11 @@ and Warehouses. The second section covers scripted provisioning of functional ro
    1. [Configuration](#configuration)
    1. [Executing](#executing)
    1. [Creating and Dropping Warehouses](#creating-and-dropping-warehouses)
-1. [Automating Functional Roles](#automating_functional_roles)
+1. [Automating Functional Roles](#automating-functional-roles)
    1. [Stored Procedures to make future grants queryable](#stored-procedures-to-make-future-grants-queryable)
-   1. [Generating Configuration](#generating_configuration)
-   1. [Provisioning Functional Role](#provisioning_functional_role)
-
+   1. [Generating Configuration](#generating-configuration)
+   1. [Provisioning Functional Role](#provisioning-functional-role)
+1. [Exporting Snowflake Source](#exporting-snowflake-source)
 1. [TODO](#todo)
 1. [Author](#author)
 1. [Credits](#credits)
@@ -331,6 +331,42 @@ it is not part of the configuration.
 The configuration definition supports wild cards at the database, schema, and warehouse level, but you have to 
 specify the exact role type as defined in db-config.json/sc-config.json/wh-config.json. 
 
+## Exporting Snowflake Source
+
+A helper tool that allows you to easily extract all* objects in a schema has been added to the repository.
+```
+$ ./sf_export --database_schema TEST_DB.TEST_SC
+2022-11-21 20:13:57 - INFO - Extracting TEST_DB.TEST_SC
+2022-11-21 20:14:01 - INFO - Writing TABLE:MY_FIRST_DBT_MODEL to MY_FIRST_DBT_MODEL.tbl
+```
+It currently uses last_altered (DML/DDL) timestamp from Snowflake to extract a new version of the object into 
+your source directory. When Snowflake gets around to providing a way to query when the last DDL was executed on a
+table the code will be updated to support it. 
+
+*) Currently the tool supports tables, external tables, views, procedures, functions, task, streams, file formats, 
+pipes, and sequences.
+
+The options you can provide the script are fairly straight forward:
+```
+$ ./sf_export --help
+usage: sf_export [-h] [--list] [--all] [--export_dir EXPORT_DIR] [--log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [--delete]
+                 [--database_schema DATABASE_SCHEMA [DATABASE_SCHEMA ...]]
+
+Snowflake Object Export Utility
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --list                List all Database.Schema in account
+  --all                 Export all Database.Schema
+  --export_dir EXPORT_DIR
+                        Name of base directory to export to
+  --log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        Log Level to output
+  --delete              Delete files no longer present in schema
+  --database_schema DATABASE_SCHEMA [DATABASE_SCHEMA ...], --db_sc DATABASE_SCHEMA [DATABASE_SCHEMA ...]
+                        Name(s) of Database.Schema to export
+```
+
 ## TODO 
 
 - [x] Build out functional role configuration generator using existing roles in Snowflake
@@ -343,6 +379,7 @@ specify the exact role type as defined in db-config.json/sc-config.json/wh-confi
 - [ ] Validate max length of role
 - [ ] Build out access roles to handle account level privileges
 - [ ] Should sf\_drop\_obj handle revoking grants of a role that is being dropped? 
+- [x] Build out tool to export source code from Snowflake
 
 ## Author
 

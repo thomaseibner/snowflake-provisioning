@@ -36,7 +36,7 @@ class CmdlineParseExport():
         parser.add_argument('--list', action='store_true', help='List all Database.Schema in account')
         parser.add_argument('--all', action='store_true', help='Export all Database.Schema')
         parser.add_argument('--export_dir', type=str, default='./export', help='Name of base directory to export to')
-        parser.add_argument('--log_level', type=str, choices=['DEBUG','INFO','WARNING','ERROR','CRITICAL'], default='WARNING', help='Log Level to output')
+        parser.add_argument('--log_level', type=str, choices=['DEBUG','INFO','WARNING','ERROR','CRITICAL'], default='INFO', help='Log Level to output')
         parser.add_argument('--delete', action='store_true', help='Delete files no longer present in schema')
         parser.add_argument('--database_schema', '--db_sc', type=db_sc_validate, help='Name(s) of Database.Schema to export', nargs='+')
 
