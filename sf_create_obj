@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from cmdlineparse import CmdlineParse
+from cmdlineparse import CmdlineParseCreateDrop
 from sfprovisionconfig import SfProvisionConfig
 import re
 
@@ -23,7 +23,7 @@ except ValueError:
     print("Configuration problem exiting")
     exit(-1)
 # Parse command line
-cmdline = CmdlineParse()
+cmdline = CmdlineParseCreateDrop()
 # Join the configuration with cmdline arguments
 prov_cfg.apply_cmdline_args(cmdline)
 

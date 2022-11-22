@@ -4,6 +4,7 @@ import argparse
 import re
 from sfconfig import SfConfig
 from sfconn import SfConn
+from sflogger import SfLogger
 from sfprovisionconfig import SfProvisionConfig
 from sfgenconfig import SfGenConfig
 
@@ -18,6 +19,7 @@ except ValueError:
 
 parser = argparse.ArgumentParser(description='Snowflake functional role configuration generator')
 parser.add_argument('role', help='Names of functional roles to parse and build configuration for. ALL queries for roles ending in _FR', nargs='+')
+parser.add_argument('--log_level', type=str, choices=['DEBUG','INFO','WARNING','ERROR','CRITICAL'], default='WARNING', help='Log Level to output')
 args = parser.parse_args()
 
 fr_role_list = args.role
@@ -28,8 +30,9 @@ if fr_role_list is None or type(fr_role_list) is not list:
     exit(-1)
 
 # Connect to Snowflake with configuration from config.json
-sf_cfg = SfConfig('config.json')
-sf_conn = SfConn(sf_cfg.config)
+sf_cfg  = SfConfig('config.json')
+logger  = SfLogger(args.log_level, __file__)
+sf_conn = SfConn(sf_cfg.config, logger)
 
 gen_cfg = SfGenConfig(prov_cfg, sf_conn, fr_role_list)
 

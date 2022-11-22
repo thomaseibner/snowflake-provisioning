@@ -3,6 +3,7 @@
 #import numpy as np
 from sfconfig import SfConfig
 from sfconn import SfConn
+from sflogger import SfLogger
 from sfprovisionconfig import SfProvisionConfig
 from sffuncrole import SfFuncRole
 import re
@@ -26,7 +27,8 @@ except ValueError:
 #   So you can't remove a whole db of schemas easily
 
 sf_cfg = SfConfig('config.json')
-sf_conn = SfConn(sf_cfg.config)
+logger  = SfLogger('WARNING', __file__)
+sf_conn = SfConn(sf_cfg.config, logger)
 
 func_role = SfFuncRole(prov_cfg, sf_conn)
 
