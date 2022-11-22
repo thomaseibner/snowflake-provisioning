@@ -36,6 +36,8 @@ objects = {
 ## Todo:
 
 ## 1 Validate that db_sc only contains valid db_sc 
+#     Validated that the names are valid
+#     Not yet validated: that names exist
 
 ## 2 Support extracts of quoted database/schema + quoted objects
 ##    requires fixing cmdlineparse.py:db_sc_validate (call it db_sc_quoted_validate)
@@ -69,6 +71,7 @@ if cmdline.args.list is False and cmdline.args.all is False:
     # This was provided through --database_schema
     # find a way to validate db_sc other than ensure valid names
     logger.debug("Need to validate all entries in db_sc")
+    # Future implementation: allow for wildcards here
 
 def write_file(file_nm, content, mode='w'):
     fobj = open(file_nm, mode)
@@ -147,13 +150,9 @@ def export_schema(db_nm, sc_nm):
             else:
                 logger.warning(f"{db_nm}.{sc_nm}:{file} not seen in this run")
 
-#for row in db_sc:
-    # needs to manipulate in place and potentially add more
-
+# Main processing
 for row in db_sc:
     db, sc = row
-    # Validated by cmdlineparse.py:db_sc_validate OR extracted directly from schemata
-    # Extracting from schemata will allow wildcards
 
     logger.info(f"Extracting {db}.{sc}")
     logger.debug(f"Creating directory {working_dir}/{db}.{sc}")
@@ -165,7 +164,6 @@ for row in db_sc:
     logger.debug(f"Extracting {db}.{sc} to directory {db_sc_dir}")
 
     # Dump out all the objects in the schema
-    # export-database-structure.py: def dump_schema_details(db_nm, sch_nm):
     export_schema(db, sc)
 
     logger.debug(f"Changing directory to {working_dir}")

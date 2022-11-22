@@ -27,20 +27,8 @@ def auto_suspend_validate(string):
 
 def db_sc_validate(string):
     sf_val = SfValidator()
-    schema_match = sf_val.schema_parse(string)
-    if (schema_match['error'] == 1):
-        print(f"Error: {schema_match['error_text']}")
-        raise ValueError
-    if (schema_match['quoted_database'] is True): 
-        print(f"Database {schema_match['database']} has quotes, unsupported for now")
-        raise ValueError
-    if (schema_match['quoted_schema'] is True):
-        print(f"Schema {schema_match['schema']} has quotes, unsupported for now")
-        raise ValueError
-    # because we only support un-quoted for now this is how we handle names (upper):
-    # if there's quotes in schema or database we should keep the case
-    db_nm,sc_nm = schema_match['database'].upper(), schema_match['schema'].upper()
-    return [db_nm, sc_nm]
+    db_nm,sc_nm = sf_val.split_db_sc(string)
+    return [ db_nm, sc_nm ]
 
 class CmdlineParseExport():
     def __init__(self):
