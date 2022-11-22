@@ -333,15 +333,16 @@ specify the exact role type as defined in db-config.json/sc-config.json/wh-confi
 
 ## Exporting Snowflake Source
 
-A helper tool that allows you to easily extract all* objects in a schema has been added to the repository.
-```
-$ ./sf_export --database_schema TEST_DB.TEST_SC
-2022-11-21 20:13:57 - INFO - Extracting TEST_DB.TEST_SC
-2022-11-21 20:14:01 - INFO - Writing TABLE:MY_FIRST_DBT_MODEL to MY_FIRST_DBT_MODEL.tbl
-```
-It currently uses last_altered (DML/DDL) timestamp from Snowflake to extract a new version of the object into 
-your source directory. When Snowflake gets around to providing a way to query when the last DDL was executed on a
-table the code will be updated to support it. 
+`sf_export` is a helper tool that allows you to easily extract all* objects in a schema. Since it is meant to be re-runnable
+it uses Snowflake's information\_schema tables as much as possible to figure out when an object was last changed to limit the
+relatively slow [GET\_DDL](https://docs.snowflake.com/en/sql-reference/functions/get_ddl.html) operations required to extract
+the source code for each object. 
+
+For tables it currently uses last_altered (DML/DDL) timestamp from Snowflake to extract a new version of the object into 
+your source directory. If/when Snowflake provides a way to query when the last DDL was executed on a table the code will be 
+updated to support it. For functions and stored procedures the tool extracts objects with the same name but different 
+parameters to the same file. If one of the functions/procedures with duplicate names are extracted the tool extracts all at
+the same time. 
 
 *) Currently the tool supports tables, external tables, views, procedures, functions, task, streams, file formats, 
 pipes, and sequences.
@@ -366,6 +367,14 @@ optional arguments:
   --database_schema DATABASE_SCHEMA [DATABASE_SCHEMA ...], --db_sc DATABASE_SCHEMA [DATABASE_SCHEMA ...]
                         Name(s) of Database.Schema to export
 ```
+The example output from running the script looks something like the below:
+```
+$ ./sf_export --database_schema TEST_DB.TEST_SC
+2022-11-21 20:13:57 - INFO - Extracting TEST_DB.TEST_SC
+2022-11-21 20:14:01 - INFO - Writing TABLE:MY_FIRST_DBT_MODEL to MY_FIRST_DBT_MODEL.tbl
+```
+Given the tool is able to incrementaly update a directory based on the objects in a schema it can be used as a reverse source
+control by checking the files into a git repository after each extract. 
 
 ## TODO 
 
