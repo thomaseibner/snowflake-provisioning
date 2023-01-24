@@ -21,9 +21,9 @@ class SfFuncRole():
         include_frs = []
         exclude_frs = []
 
-        db_prefix = '' #db_cfg.config['AR_PREFIX']
-        sc_prefix = '' #sc_cfg.config['AR_PREFIX']
-        wh_prefix = '' #wh_cfg.config['AR_PREFIX']
+        db_prefix = db_cfg.config['AR_PREFIX']
+        sc_prefix = sc_cfg.config['AR_PREFIX']
+        wh_prefix = wh_cfg.config['AR_PREFIX']
 
         # Includes/excludes are really hard to match so the scripts needs to compare the output of the DB to
         # what is generated with the configuration. It will not be a simple 1:1 for between config and db
@@ -57,17 +57,6 @@ class SfFuncRole():
         # if existing_role = 1
         if existing_role == 0:
             print(f"CREATE ROLE {frole} IF NOT EXISTS;")
-
-            
-        # Now we have the existing AR/FR for a given role:
-#        print("FROLE")
-#        print(frole)
-#        print("existing_role")
-#        print(existing_role)
-#        print("existing_ar")
-#        print(existing_ar)
-#        print("existing_fr")
-#        print(existing_fr)
 
         # What does the configuration say should be granted?
         # FIX: db *
@@ -194,15 +183,6 @@ class SfFuncRole():
             print(f"REVOKE ROLE {remfr} FROM ROLE {frole};")
 
         print()
-#        print("delta_add_grants")
-#        print(delta_add_grants)
-#        print("delta_add_frs")
-#        print(delta_add_frs)
-#        print("delta_remove_grants")
-#        print(delta_remove_grants)
-#        print("delta_remove_frs")
-#        print(delta_remove_frs)
-
 
         
         

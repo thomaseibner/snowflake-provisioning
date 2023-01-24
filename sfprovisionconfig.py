@@ -6,6 +6,20 @@ sc_cfg_file = "sc-config.json"
 wh_cfg_file = "wh-config.json"
 fr_cfg_file = "fr-config.json"
 
+sc_map = {
+    "TABLES": "TABLE",
+    "EXTERNAL TABLES": "TABLE",
+    "VIEWS": "VIEW",
+    "MATERIALIZED VIEWS": "VIEW",
+    "FILE FORMATS": "FILE FORMAT",
+    "STAGES": "STAGE",
+    "STREAMS": "STREAM",
+    "SEQUENCES": "SEQUENCE",
+    "FUNCTIONS": "FUNCTION",
+    "PROCEDURES": "PROCEDURE",
+    "TASKS": "TASK"
+} 
+            
 class SfProvisionConfig():
     """SfProvisionConfig parses database/schema/warehouse configuration and 
        builds out the statements required to provision objects."""
@@ -347,6 +361,7 @@ class SfProvisionConfig():
             self.create_role(ar_role)
 
     def create_sc_grants(self):
+        seen = {}
         cfg = self.sc
         cmdline = self.cmdline
         ar_sc_prefix = cfg.config['AR_PREFIX']
@@ -365,6 +380,12 @@ class SfProvisionConfig():
             type_grants = cfg.config['ROLE_PERMISSIONS'][role_type]
             for privilege in type_grants.keys():
                 for object in type_grants[privilege]:
+                    if privilege == 'ALL':
+                        # remove S; materialized/external and skip multiples
+                        sing_obj = sc_map[object]
+                        if sing_obj not in seen.keys():
+                            self.grant_create_privilege(sing_obj, f"IN SCHEMA {cmdline.db_nm}.{cmdline.sc_nm}", ar_role)
+                            seen[sing_obj] = 1
                     self.grant_privilege_in(privilege, f"ALL {object}", f"{cmdline.db_nm}.{cmdline.sc_nm}", 'IN SCHEMA', ar_role)
                     self.grant_future_privilege_in(privilege, object, f"{cmdline.db_nm}.{cmdline.sc_nm}", 'IN SCHEMA', ar_role)
         
@@ -474,6 +495,10 @@ class SfProvisionConfig():
     def grant_future_privilege_in(self, priv, on, in_obj, name, role):
         self.obj_grants.append(f"GRANT {priv} ON FUTURE {on} {name} {in_obj} TO ROLE {role};")
         self.revoke_obj_grants.append(f"REVOKE {priv} ON FUTURE {on} {name} {in_obj} FROM ROLE {role};")
+
+    def grant_create_privilege(self, obj, in_obj, role):
+        self.obj_grants.append(f"GRANT CREATE {obj} {in_obj} TO ROLE {role};")
+        self.revoke_obj_grants.append(f"REVOKE CREATE {obj} {in_obj} FROM ROLE {role};")
 
     def print_create(self):
         for obj in self.objects:
