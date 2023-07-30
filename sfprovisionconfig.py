@@ -301,8 +301,8 @@ class SfProvisionConfig():
                     elif (object == 'SCHEMA'):
                         print(f"Unsupported grants for {privilege} on {object}")
                     else:
-                        self.grant_privilege_in(privilege, object, 'IN DATABASE', cmdline.db_nm, ar_role)
-                        self.grant_future_privilege_in(privilege, object, 'IN DATABASE', cmdline.db_nm, ar_role)
+                        self.grant_privilege_in(privilege, object, 'ON DATABASE', cmdline.db_nm, ar_role)
+                        self.grant_future_privilege_in(privilege, object, 'ON DATABASE', cmdline.db_nm, ar_role)
         
     def create_db_r2r_grants(self):
         cfg = self.db
@@ -384,10 +384,10 @@ class SfProvisionConfig():
                         # remove S; materialized/external and skip multiples
                         sing_obj = sc_map[object]
                         if sing_obj not in seen.keys():
-                            self.grant_create_privilege(sing_obj, f"IN SCHEMA {cmdline.db_nm}.{cmdline.sc_nm}", ar_role)
+                            self.grant_create_privilege(sing_obj, f"ON SCHEMA {cmdline.db_nm}.{cmdline.sc_nm}", ar_role)
                             seen[sing_obj] = 1
-                    self.grant_privilege_in(privilege, f"ALL {object}", f"{cmdline.db_nm}.{cmdline.sc_nm}", 'IN SCHEMA', ar_role)
-                    self.grant_future_privilege_in(privilege, object, f"{cmdline.db_nm}.{cmdline.sc_nm}", 'IN SCHEMA', ar_role)
+                    self.grant_privilege_in(privilege, f"ALL {object}", f"{cmdline.db_nm}.{cmdline.sc_nm}", 'ON SCHEMA', ar_role)
+                    self.grant_future_privilege_in(privilege, object, f"{cmdline.db_nm}.{cmdline.sc_nm}", 'ON SCHEMA', ar_role)
         
     def create_sc_r2r_grants(self):
         cfg = self.sc
