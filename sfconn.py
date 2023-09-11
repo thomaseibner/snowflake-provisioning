@@ -160,6 +160,131 @@ order by catalog_name, schema_name desc
             exit(-1)
         return new_cursor
 
+    def validate_role(self, role, db_nm, sc_nm): 
+        # Validate that the role has access to the db_nm.sc_nm
+        try:
+            self.run_query(f"USE ROLE {role}")
+            curs = self.cursor(db_nm, sc_nm)
+        except: 
+            self.logger.error(f"Error: role {role} does not have access to {db_nm}.{sc_nm}")
+            exit(-1)
+        return True
+    
+    def get_tables(self, clone_role, db_nm, sc_nm):
+        list_of_tables = []
+        try:
+            self.run_query(f"USE ROLE {clone_role}")
+            curs = self.cursor(db_nm, sc_nm)
+            curs.execute(f"""
+select tsm.id,tsm.clone_group_id,t.table_catalog, t.table_schema, t.table_name, t.table_owner,
+       case
+         when tsm.id = tsm.clone_group_id then FALSE
+         else TRUE
+       end as is_clone,
+       t.is_transient, t.row_count, t.retention_time, t.bytes, tsm.active_bytes, tsm.time_travel_bytes, tsm.failsafe_bytes, tsm.retained_for_clone_bytes
+  from {db_nm}.information_schema.tables t
+       left outer join snowflake.account_usage.table_storage_metrics tsm on t.table_catalog = tsm.table_catalog
+                                                                        and t.table_schema = tsm.table_schema
+                                                                        and t.table_name = tsm.table_name
+                                                                        and tsm.deleted = false
+ where t.table_catalog = '{db_nm}'
+   and t.table_schema = '{sc_nm}'
+   and t.table_type = 'BASE TABLE'
+ order by t.table_catalog asc, t.table_schema asc, t.table_name asc                         
+                          """)
+            for row in curs:
+                list_of_tables.append(row)
+
+        except ProgrammingError as e:
+            self.logger.error(f"Fatal Error: Could not use database {db_nm} and schema {sc_nm}: {e}")
+            exit(-1)
+        return list_of_tables
+
+    def get_clone_tables(self, clone_role, from_db_nm, from_sc_nm, to_db_nm, to_sc_nm):
+        list_of_clones = []
+        try:
+            self.run_query(f"USE ROLE {clone_role}")
+            curs = self.cursor(from_db_nm, from_sc_nm)
+            curs.execute(f"""
+with src_tables as (
+  select table_catalog, table_schema, table_name, row_count, bytes, created, last_altered
+    from {from_db_nm}.information_schema.tables
+   where table_type    = 'BASE TABLE'
+     and table_catalog = '{from_db_nm}'
+     and table_schema  = '{from_sc_nm}'
+), clone_tables as (
+  select table_catalog, table_schema, table_name, row_count, bytes, created, last_altered
+    from {to_db_nm}.information_schema.tables
+   where table_type    = 'BASE TABLE'
+     and table_catalog = '{to_db_nm}'
+     and table_schema  = '{to_sc_nm}'
+), tables as (
+  select st.table_name,
+         st.row_count    as st_row_count,
+         ct.row_count    as ct_row_count,
+         st.bytes        as st_bytes,
+         ct.bytes        as ct_bytes,
+         st.created      as st_created,
+         ct.created      as ct_created,
+         st.last_altered as st_last_altered,
+         ct.last_altered as ct_last_altered,
+         case
+           when st_row_count != ct_row_count then TRUE
+           else FALSE
+         end as row_count_diff,
+         case
+           when st_bytes != ct_bytes then TRUE
+           else FALSE
+         end as bytes_diff,
+         case
+           when st_last_altered > ct_created then TRUE
+           else FALSE
+         end as dml_since_clone
+    from src_tables st,
+         clone_tables ct
+   where st.table_name = ct.table_name
+), tsm as (
+  select id, clone_group_id, table_catalog, table_schema, table_name, active_bytes, retained_for_clone_bytes, deleted,
+         case
+           when tsm.id = tsm.clone_group_id then FALSE
+           else TRUE
+         end as is_clone
+    from snowflake.account_usage.table_storage_metrics tsm
+   where (
+          (tsm.table_catalog = '{to_db_nm}' and tsm.table_schema = '{to_sc_nm}' and tsm.deleted = false)
+          or
+          (tsm.table_catalog = '{from_db_nm}' and tsm.table_schema = '{from_sc_nm}')
+         )
+)
+select tsm1.table_catalog || '.' || tsm1.table_schema as clone_db_sc,
+       tsm2.table_catalog || '.' || tsm2.table_schema as src_db_sc,
+       tsm1.table_name,
+       case
+         when tsm1.active_bytes > 0 then TRUE
+         else FALSE
+       end as clone_active_bytes,
+       case
+         when tsm2.retained_for_clone_bytes > 0 then TRUE
+         else FALSE
+       end as src_retained_for_clone_bytes,
+       tsm2.deleted as src_deleted,
+       t.row_count_diff, 
+       t.bytes_diff, 
+       t.dml_since_clone
+  from tsm tsm1, tsm tsm2, tables t
+where t.table_name = tsm1.table_name
+   and tsm2.id = tsm1.clone_group_id
+   and tsm1.is_clone = TRUE
+order by tsm1.table_name asc
+-- end of query
+                         """)
+            for row in curs:
+                list_of_clones.append(row)
+        except ProgrammingError as e:
+            self.logger.error(f"Fatal Error: Could not use database {from_db_nm} and schema {from_sc_nm}: {e}")
+            exit(-1)
+        return list_of_clones
+
     def get_ddl(self, db_nm, sc_nm, type, name):
         # returns non-fully qualfied name
         curs = self.cursor(db_nm, sc_nm)

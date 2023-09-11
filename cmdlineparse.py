@@ -71,6 +71,88 @@ class CmdlineParseExport():
         # transfer how-ever database_schema looks like into the array db_sc from main program, but stupid to do this twice
         # can we convert to same datamodel?
 
+class CmdlineParseClone():
+    def __init__(self):
+        parser = argparse.ArgumentParser(description='Snowflake Clone Utility')
+        # the clone_role has to have access to both clone the original tables and to write to the to_db_sc
+        parser.add_argument('--log_level', type=str, choices=['DEBUG','INFO','WARNING','ERROR','CRITICAL'], default='INFO', help='Log Level to output')
+        sub_parsers = parser.add_subparsers(help='sub-command help', dest='type')   
+        init_parser    = sub_parsers.add_parser('init', help='Initialize clones of target schema tables in source schema')
+        refresh_parser = sub_parsers.add_parser('refresh', help='Refresh clones of tables in target schema from source schema')
+        remove_parser  = sub_parsers.add_parser('remove', help='Remove clones in target schema derived from source schema')
+        for tmp_parser in [init_parser, refresh_parser, remove_parser]:
+            tmp_parser.add_argument('--owner_role', type=str, help='Name of role to grant ownership of objects to in target schema')
+            tmp_parser.add_argument('--from_db_sc', type=db_sc_validate, help='Name of source Database.Schema')
+            tmp_parser.add_argument('--to_db_sc', type=db_sc_validate, help='Name of target Database.Schema')
+            tmp_parser.add_argument('--dryrun', '--noapply', action='store_true', help='Do not apply any changes - print on stdout')
+        for tmp_parser in [init_parser, refresh_parser]:
+            tmp_parser.add_argument('--clone_role', type=str, help='Name of role to grant to perform clone with') 
+            # in case owner is not the same as role (example: clone role can read prod and write dev, owner role can only write dev)
+        init_parser.add_argument('--delete_existing', action='store_true', help='Delete existing tables in target schema - if not fails if table exists already')
+        self.parser = parser
+        self.args = parser.parse_args()
+        self.sf_val = SfValidator()
+        self.checkinput()
+
+    def checkinput(self):
+        type = self.args.type
+        if (type is None):
+            self.parser.print_help()
+            print("Please specify type: init/refresh/remove")
+            exit(0)
+        self.type = type
+        # validate to_db_sc and from_db_sc
+        if self.args.to_db_sc is None or self.args.from_db_sc is None:
+            print("To and From Database.Schema must be specified")
+            self.parser.print_help()
+            exit(0)
+
+        for quoted_identifier in ['.'.join(self.args.to_db_sc), '.'.join(self.args.from_db_sc)]:
+            schema_match = self.sf_val.schema_parse(quoted_identifier)
+            if (schema_match['error'] == 1):
+                print(f"Error: {schema_match['error_text']}")
+                exit(-1)
+            if (schema_match['quoted_database'] is True): 
+                print(f"Database {schema_match['database']} has quotes, unsupported for now")
+                exit(-1)
+            if (schema_match['quoted_schema'] is True):
+                print(f"Schema {schema_match['schema']} has quotes, unsupported for now")
+                exit(-1)
+        # now we can use the unquoted names
+        db_nm,sc_nm = self.args.to_db_sc[0].upper(), self.args.to_db_sc[1].upper()
+        self.to_db_nm = db_nm
+        self.to_sc_nm = sc_nm
+        db_nm,sc_nm = self.args.from_db_sc[0].upper(), self.args.from_db_sc[1].upper()
+        self.from_db_nm = db_nm
+        self.from_sc_nm = sc_nm
+
+        if (type == 'init'):
+            # clone_role, delete_existing - don't need to check delete_existing
+            if self.args.clone_role is None:
+                print("Clone role must be specified")
+                self.parser.print_help()
+                exit(0)
+            self.clone_role = self.args.clone_role
+        elif (type == 'refresh'):
+            # clone_role
+            if self.args.clone_role is None:
+                print("Clone role must be specified")
+                self.parser.print_help()
+                exit(0)
+            self.clone_role = self.args.clone_role
+        #elif (type == 'remove '):
+        #    # nothing special here
+        #    print()
+        else:
+            # This should never happen with the choices provided in the argparse init
+            print(f"Unknown type: {type}")
+        # validate rest of arguments that are similar across all types 
+        if self.args.owner_role is None:
+            print("Owner role must be specified")
+            self.parser.print_help()
+            exit(0)
+        self.owner_role = self.args.owner_role
+        # Good to go now
 
 class CmdlineParseCreateDrop():
     """CmdlineParse parses the command line options required to provision

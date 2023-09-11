@@ -19,6 +19,7 @@ and Warehouses. The second section covers scripted provisioning of functional ro
    1. [Generating Configuration](#generating-configuration)
    1. [Provisioning Functional Role](#provisioning-functional-role)
 1. [Exporting Snowflake Source](#exporting-snowflake-source)
+1. [Cloning tables between schemas](#cloning-tables-between-schemas)
 1. [TODO](#todo)
 1. [Author](#author)
 1. [Credits](#credits)
@@ -375,6 +376,130 @@ $ ./sf_export --database_schema TEST_DB.TEST_SC
 ```
 Given the tool is able to incrementaly update a directory based on the objects in a schema it can be used as a reverse source
 control by checking the files into a git repository after each extract. 
+
+## Cloning tables between schemas
+
+`sf_clone` is a helper tool that allows you to easily clone tables between schemas, but also refresh those clones. Cloning tables in Snowflake is very powerful, but has some clear shortcomings as well. Cloning suffers from the following limitations: 
+
+* It is a one-time operation with no way to incrementally reset the clone to a specific point in time on the source table
+* If you haven't scripted the creation of the clones you can't easily recreate or maintain them.
+* While initially a clone is zero-copy and doesn't cost anything in storage if it is left unmaintained on a source table that is frequently updated it will incur storage costs.
+
+The tool itself isn't very complex or special and if you already have a script that re-initializes data tables in a schema probably not valuable to you, but explaining the logic behind it could be helpful to come up with your own methodology. The premise for keeping your clones up to date is that you can develop code in a lower environment that uses the latest data as if it was in the same schema. This is in particular useful if you're working with [Dynamic Tables](https://docs.snowflake.com/en/user-guide/dynamic-tables-about).
+
+The incremental update logic is best described by explaining the sql used to determine if a table needs to be re-cloned.
+The SQL is using a combination of [information\_schema.tables](https://docs.snowflake.com/en/sql-reference/info-schema/tables) and [snowflake.account\_usage.table\_storage\_metrics](https://docs.snowflake.com/en/sql-reference/account-usage/table_storage_metrics.html).
+
+The logic is built with CTEs (Common Table Expressions) to make it easier to understand and based on my experience more performant. 
+```SQL
+with src_tables as (
+  select table_catalog, table_schema, table_name, row_count, bytes, created, last_altered
+    from {from_db_nm}.information_schema.tables
+   where table_type    = 'BASE TABLE'
+     and table_catalog = '{from_db_nm}'
+     and table_schema  = '{from_sc_nm}'
+), clone_tables as (
+  select table_catalog, table_schema, table_name, row_count, bytes, created, last_altered
+    from {to_db_nm}.information_schema.tables
+   where table_type    = 'BASE TABLE'
+     and table_catalog = '{to_db_nm}'
+     and table_schema  = '{to_sc_nm}'
+), tables as (
+  select st.table_name,
+         st.row_count    as st_row_count,
+         ct.row_count    as ct_row_count,
+         st.bytes        as st_bytes,
+         ct.bytes        as ct_bytes,
+         st.created      as st_created,
+         ct.created      as ct_created,
+         st.last_altered as st_last_altered,
+         ct.last_altered as ct_last_altered,
+         case
+           when st_row_count != ct_row_count then TRUE
+           else FALSE
+         end as row_count_diff,
+         case
+           when st_bytes != ct_bytes then TRUE
+           else FALSE
+         end as bytes_diff,
+         case
+           when st_last_altered > ct_created then TRUE
+           else FALSE
+         end as dml_since_clone
+    from src_tables st,
+         clone_tables ct
+   where st.table_name = ct.table_name
+)
+```
+First it retrieves all base tables from the source schema and all base tables from the target schema along with some fields that are relevant in determining whether to update the clone or not. You have to specifically called out 'BASE TABLE' here or you will also get VIEWS, and NULLS for Dynamic Tables. It then joins the two tables on table\_name and creates a CTE that has the following fields: row\_count, bytes, created, and last altered for each table in source and target. It uses a case statement to determine if the row\_count and bytes are different between the source and target table. The last case statement is used to determine if the source table has been altered using DML or DDL since the target table was created. This is important as it is possible to have a table that has the same row\_count and bytes, but has been altered since the clone was created. It is also the most likely reason to re-clone a table. 
+
+```SQL
+, tsm as (
+  select id, 
+         clone_group_id, 
+         table_catalog, 
+         table_schema, 
+         table_name, 
+         active_bytes, 
+         retained_for_clone_bytes, 
+         deleted,
+         case
+           when tsm.id = tsm.clone_group_id then FALSE
+           else TRUE
+         end as is_clone
+    from snowflake.account_usage.table_storage_metrics tsm
+   where (
+          (tsm.table_catalog = '{to_db_nm}' and tsm.table_schema = '{to_sc_nm}' and tsm.deleted = false)
+          or
+          (tsm.table_catalog = '{from_db_nm}' and tsm.table_schema = '{from_sc_nm}')
+         )
+)
+```
+There are two reasons to join in with table\_storage\_metrics - firstly not every base table in the target schema is necessarily a clone that needs to be updated and secondly it is possible that a table has been renamed in the source schema that could leave a unresolved reference. My use case involved a table that got completely rebuilt from scratch every day using a table rename, so looking at table\_storage\_metrics alone would not have shown the table that needed to be updated. That is why it is so important to understand your use case and adjust the logic accordingly.
+
+This CTE selects out all tables from the source schema and all tables from the target schema that are not deleted. It then builds a `is\_clone` field by comparing the id and clone_group_id to simplify the logic later on. 
+
+```SQL
+select tsm1.table_catalog || '.' || tsm1.table_schema as clone_db_sc,
+       tsm2.table_catalog || '.' || tsm2.table_schema as src_db_sc,
+       tsm1.table_name,
+       case
+         when tsm1.active_bytes > 0 then TRUE
+         else FALSE
+       end as clone_active_bytes,
+       case
+         when tsm2.retained_for_clone_bytes > 0 then TRUE
+         else FALSE
+       end as src_retained_for_clone_bytes,
+       tsm2.deleted as src_deleted,
+       t.row_count_diff, 
+       t.bytes_diff, 
+       t.dml_since_clone
+  from tsm tsm1, tsm tsm2, tables t
+where t.table_name = tsm1.table_name
+   and tsm2.id = tsm1.clone_group_id
+   and tsm1.is_clone = TRUE
+order by tsm1.table_name asc
+```
+Lastly the query joins together the CTE for table\_storage\_metrics twice by id and clone\_group\_id and only if tsm1 is a clone - but not using the table\_name as tables could have been renamed as in my use case. We also select out two more helper fields to be used to determine if the clone needs to be updated: clone\_active\_bytes and src\_retained\_for\_clone\_bytes. clone\_active\_bytes is TRUE if the clone has active bytes which means the cloned table has been changed. src\_retained\_for\_clone\_bytes is TRUE if the source table has been updated after the clone was created. It is a bit of a slower way to derive `information\_schema.tables.last\_altered`. I use these and the other derived fields to feed back information to the user on why a table is being re-cloned.
+
+The script `sf\_clone` provided in this repo uses the above logic to perform refreshes with. It also offers two other options: 1) to initialize cloning of all base tables in a schema and 2) to delete all clones in a schema. 
+
+The following example shows off the output from performing a refresh of clones between schemas:
+```
+$ ./sf_clone refresh --from_db_sc TEST_DB.SC_1 --to_db_sc TEST_DB.SC_2 --clone_role PROD_FR --owner_role DEV_FR --dryrun
+2023-09-10 20:17:17 - INFO - Incrementally refreshing clones of tables in TEST_DB.SC_2 from TEST_DB.SC_1
+2023-09-10 20:17:50 - INFO - Refreshing ALLFUTUREGRANTSDB from TEST_DB.SC_1 because "src table has retained_for_clone_bytes" "src table deleted" "clone and src row_count_diff" "src has had dml_since_clone"
+2023-09-10 20:17:50 - INFO - Refreshing ALLFUTUREGRANTSSC from TEST_DB.SC_1 because "src table has retained_for_clone_bytes" "src table deleted" "clone and src row_count_diff" "clone and src bytes_diff" "src has had dml_since_clone"
+2023-09-10 20:17:50 - INFO - Refreshing ALLGRANTSWH from TEST_DB.SC_1 because "src table has retained_for_clone_bytes" "src table deleted" "clone and src row_count_diff" "clone and src bytes_diff" "src has had dml_since_clone"
+2023-09-10 20:17:50 - INFO - Refreshing ALLSTREAMS from TEST_DB.SC_1 because "src table has retained_for_clone_bytes" "src has had dml_since_clone"
+2023-09-10 20:17:50 - INFO - Refreshing ALLTASKS from TEST_DB.SC_1 because "clone table has active_bytes" "clone and src row_count_diff" "clone and src bytes_diff" "src has had dml_since_clone"
+2023-09-10 20:17:50 - INFO - Refreshing REGIONS from TEST_DB.SC_1 because "src table has retained_for_clone_bytes" "clone and src row_count_diff" "clone and src bytes_diff" "src has had dml_since_clone"
+2023-09-10 20:17:50 - INFO - Refreshing TMP_CDS_TERRITORY_SFDC from TEST_DB.SC_1 because "src table has retained_for_clone_bytes" "clone and src row_count_diff" "clone and src bytes_diff" "src has had dml_since_clone"
+2023-09-10 20:17:50 - INFO - Refreshing ZIP2FIPS from TEST_DB.SC_1 because "clone table has active_bytes" "clone and src row_count_diff" "clone and src bytes_diff"
+2023-09-10 20:17:50 - INFO - Done
+$
+```
 
 ## TODO 
 
