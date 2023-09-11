@@ -495,8 +495,6 @@ $ ./sf_clone refresh --from_db_sc TEST_DB.SC_1 --to_db_sc TEST_DB.SC_2 --clone_r
 2023-09-10 20:17:50 - INFO - Refreshing ALLSTREAMS from TEST_DB.SC_1 because "src table has retained_for_clone_bytes" "src has had dml_since_clone"
 2023-09-10 20:17:50 - INFO - Refreshing ALLTASKS from TEST_DB.SC_1 because "clone table has active_bytes" "clone and src row_count_diff" "clone and src bytes_diff" "src has had dml_since_clone"
 2023-09-10 20:17:50 - INFO - Refreshing REGIONS from TEST_DB.SC_1 because "src table has retained_for_clone_bytes" "clone and src row_count_diff" "clone and src bytes_diff" "src has had dml_since_clone"
-2023-09-10 20:17:50 - INFO - Refreshing TMP_CDS_TERRITORY_SFDC from TEST_DB.SC_1 because "src table has retained_for_clone_bytes" "clone and src row_count_diff" "clone and src bytes_diff" "src has had dml_since_clone"
-2023-09-10 20:17:50 - INFO - Refreshing ZIP2FIPS from TEST_DB.SC_1 because "clone table has active_bytes" "clone and src row_count_diff" "clone and src bytes_diff"
 2023-09-10 20:17:50 - INFO - Done
 $
 ```
