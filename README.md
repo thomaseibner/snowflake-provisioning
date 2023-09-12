@@ -457,7 +457,7 @@ First it retrieves all base tables from the source schema and all base tables fr
 ```
 There are two reasons to join in with table\_storage\_metrics - firstly not every base table in the target schema is necessarily a clone that needs to be updated and secondly it is possible that a table has been renamed in the source schema that could leave a unresolved reference. My use case involved a table that got completely rebuilt from scratch every day using a table rename, so looking at table\_storage\_metrics alone would not have shown the table that needed to be updated. That is why it is so important to understand your use case and adjust the logic accordingly.
 
-This CTE selects out all tables from the source schema and all tables from the target schema that are not deleted. It then builds a `is\_clone` field by comparing the id and clone_group_id to simplify the logic later on. 
+This CTE selects out all tables from the source schema and all tables from the target schema that are not deleted. It then builds a `is_clone` field by comparing the id and clone_group_id to simplify the logic later on. 
 
 ```SQL
 select tsm1.table_catalog || '.' || tsm1.table_schema as clone_db_sc,
@@ -481,9 +481,9 @@ where t.table_name = tsm1.table_name
    and tsm1.is_clone = TRUE
 order by tsm1.table_name asc
 ```
-Lastly the query joins together the CTE for table\_storage\_metrics twice by id and clone\_group\_id and only if tsm1 is a clone - but not using the table\_name as tables could have been renamed as in my use case. We also select out two more helper fields to be used to determine if the clone needs to be updated: clone\_active\_bytes and src\_retained\_for\_clone\_bytes. clone\_active\_bytes is TRUE if the clone has active bytes which means the cloned table has been changed. src\_retained\_for\_clone\_bytes is TRUE if the source table has been updated after the clone was created. It is a bit of a slower way to derive `information\_schema.tables.last\_altered`. I use these and the other derived fields to feed back information to the user on why a table is being re-cloned.
+Lastly the query joins together the CTE for table\_storage\_metrics twice by id and clone\_group\_id and only if tsm1 is a clone - but not using the table\_name as tables could have been renamed as in my use case. We also select out two more helper fields to be used to determine if the clone needs to be updated: clone\_active\_bytes and src\_retained\_for\_clone\_bytes. clone\_active\_bytes is TRUE if the clone has active bytes which means the cloned table has been changed. src\_retained\_for\_clone\_bytes is TRUE if the source table has been updated after the clone was created. It is a bit of a slower way to derive `information_schema.tables.last_altered`. I use these and the other derived fields to feed back information to the user on why a table is being re-cloned.
 
-The script `sf\_clone` provided in this repo uses the above logic to perform refreshes with. It also offers two other options: 1) to initialize cloning of all base tables in a schema and 2) to delete all clones in a schema. 
+The script `sf_clone` provided in this repo uses the above logic to perform refreshes with. It also offers two other options: 1) to initialize cloning of all base tables in a schema and 2) to delete all clones in a schema. 
 
 The following example shows off the output from performing a refresh of clones between schemas:
 ```
