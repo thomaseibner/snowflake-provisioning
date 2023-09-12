@@ -515,7 +515,7 @@ $
 
 ## Author
 
-Thomas Eibner (@thomaseibner) [twitter](http://twitter.com/thomaseibner) [LinkedIn](https://www.linkedin.com/in/thomaseibner/)
+Thomas Eibner (@thomaseibner) [LinkedIn](https://www.linkedin.com/in/thomaseibner/)
 
 ## Credits
 
