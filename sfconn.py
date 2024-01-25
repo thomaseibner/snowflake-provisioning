@@ -289,6 +289,8 @@ order by tsm1.table_name asc
         # returns non-fully qualfied name
         curs = self.cursor(db_nm, sc_nm)
         #self.logger.debug(f"select get_ddl('{type}', '{name}')")
+        if type == 'DYNAMIC TABLE':
+            type = 'TABLE'
         curs.execute(f"select get_ddl('{type}', '{name}')")
         obj_def = curs.fetchone()
         if obj_def is None:

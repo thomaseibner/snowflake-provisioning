@@ -23,6 +23,7 @@ file_stats = {}
 objects = { 
     'TABLE':          '.tbl',
     'EXTERNAL TABLE': '.tbl',
+    'DYNAMIC TABLE':  '.tbl',
     'VIEW':           '.vw',
     'PROCEDURE':      '.pr',
     'TASK':           '.tsk',
@@ -34,7 +35,7 @@ objects = {
 }
 
 ## Todo:
-
+    
 ## 1 Validate that db_sc only contains valid db_sc 
 #     Validated that the names are valid
 #     Not yet validated: that names exist
