@@ -421,3 +421,134 @@ order by tsm1.table_name asc
             self.logger.error(f"Error getting objects: {e}")
             return None
         return objs
+
+    def tieout_create_tables(self, prefix):
+        self.tieout_prefix = prefix
+        self.tieout_overview = f"{prefix}_1_OVERVIEW"
+        self.tieout_summary  = f"{prefix}_2_COLUMNS_SUMMARY"
+        self.tieout_details  = f"{prefix}_3_COLUMNS_DETAIL"
+        self.tieout_skipped  = f"{prefix}_4_COLUMNS_SKIPPED"
+        self.tieout_sum_overview = f"{prefix}_5_SUM_OVERVIEW"
+        self.tieout_sum_col      = f"{prefix}_6_SUM_COLUMN"
+        self.tieout_sum_detail   = f"{prefix}_7_SUM_DETAIL"
+        self.tieout_sum_field    = f"{prefix}_8_SUM_FIELD"
+        
+        self.logger.debug(f"Setting up output tables prefixed with {prefix}")
+        datastore_sql = f"""
+create or replace table {self.tieout_overview} (
+    name          varchar not null,
+    key           variant not null,
+    overlap_rowcount int not null,
+    from_tbl      varchar not null,
+    from_rowcount int not null,
+    from_unique   int not null,
+    to_tbl        varchar not null,
+    to_rowcount   int not null,
+    to_unique     int not null,
+    tieout_dt     timestamp default current_timestamp()
+)
+"""
+        curs = self.run_query(datastore_sql)
+        self.logger.debug(f"Created {self.tieout_overview}")
+        datastore_sql = f"""
+create or replace table {self.tieout_summary} (
+    name          varchar not null,
+    col_nm        varchar not null,
+    col_diff_cnt  int not null,
+    tieout_dt     timestamp default current_timestamp()
+)
+"""
+        curs = self.run_query(datastore_sql)
+        self.logger.debug(f"Created {self.tieout_summary}")
+        datastore_sql = f"""
+create or replace table {self.tieout_details} (
+    name          varchar not null,
+    col_nm        varchar not null,
+    key_vals      variant not null, -- ability to store 1 or more keys in array
+    data_vals     variant not null, -- ability to store both to and from values without having to worry about data type
+    tieout_dt     timestamp default current_timestamp()
+-- offer options to only do summary 
+-- or full difference
+)
+"""
+        curs = self.run_query(datastore_sql)
+        self.logger.debug(f"Created {self.tieout_details}")
+        datastore_sql = f"""
+create or replace table {self.tieout_skipped} (
+    name          varchar not null,
+    tbl_nm        varchar not null,
+    col_nm        varchar not null,
+    tieout_dt     timestamp default current_timestamp()
+)
+"""
+        cur = self.run_query(datastore_sql)
+        self.logger.debug(f"Created {self.tieout_skipped}")
+        datastore_sql = f"""
+create or replace view {self.tieout_sum_overview} as (
+select name, 
+       overlap_rowcount, 
+       from_unique, 
+       round(((from_unique*100)/overlap_rowcount), 3) as from_pct, 
+       to_unique, 
+       round(((to_unique*100)/overlap_rowcount), 3) as to_pct 
+  from {self.tieout_overview}
+ order by name asc
+)
+"""
+        cur = self.run_query(datastore_sql)
+        self.logger.debug(f"Created view {self.tieout_sum_overview}")
+        datastore_sql = f"""
+create or replace view {self.tieout_sum_col} as (
+select one.name, 
+       two.col_nm,
+       one.overlap_rowcount,
+       two.col_diff_cnt,
+       round((100-(col_diff_cnt*100)/overlap_rowcount), 3) as col_pct,
+       case 
+         when col_diff_cnt = 0 then 'PERFECT'
+         else 'IMPERFECT'
+       end as col_match
+  from {self.tieout_overview} one,
+       {self.tieout_summary} two
+ where one.name = two.name
+ order by name, col_nm asc
+)
+"""
+        cur = self.run_query(datastore_sql)
+        self.logger.debug(f"Created view {self.tieout_sum_col}")
+        datastore_sql = f"""
+create or replace view {self.tieout_sum_detail} as (
+select one.name, 
+       one.overlap_rowcount,
+       three.col_nm,
+       three.key_vals,
+       three.data_vals:__from_val as from_val,
+       three.data_vals:__to_val as to_val,
+       count(*) as col_diff_cnt,
+       round(((col_diff_cnt*100)/overlap_rowcount), 3) as col_diff_pct,
+       jarowinkler_similarity(from_val, to_val) as jarowinkler_similarity,
+       editdistance(from_val, to_val) as editdistance,
+       soundex(from_val) = soundex(to_val) as soundex
+  from {self.tieout_overview} one,
+       {self.tieout_details} three
+ where one.name = three.name
+ group by all
+ order by col_diff_cnt desc
+)
+"""
+        cur = self.run_query(datastore_sql)
+        self.logger.debug(f"Created view {self.tieout_sum_detail}")
+        datastore_sql = f"""
+create or replace view {self.tieout_sum_field} as (
+select name, 
+       sum(overlap_rowcount) as tot_fields, 
+       sum(col_diff_cnt) as tot_diff, 
+       round((tot_diff*100/tot_fields), 3) as diff_pct, 
+       100-diff_pct as tot_pct 
+  from {self.tieout_sum_col}
+ group by name
+)
+"""
+        cur = self.run_query(datastore_sql)
+        self.logger.debug(f"Created view {self.tieout_sum_field}")
+

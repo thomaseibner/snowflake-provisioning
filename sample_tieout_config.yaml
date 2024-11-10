@@ -1,0 +1,11 @@
+CMP:
+    OUTPUT_DB:     TEST_DB
+    OUTPUT_SC:     PUBLIC
+    OUTPUT_PREFIX: CMP
+    VALIDATIONS:
+        -
+            NAME:        CUSTOMERS
+            KEY:         [ CUSTOMER_KEY ]
+            FROM_TBL:    TEST_DB.PRD.CUSTOMERS
+            TO_TBL:      TEST_DB.DEV.CUSTOMERS
+            IGNORE_COLS: [ '_IGNORE_THIS_COLUMN' ]

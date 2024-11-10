@@ -79,6 +79,23 @@ class SfValidator():
             return name
         return None
 
+    def split_db_sc_obj(self, db_sc_obj):
+        if '.' not in db_sc_obj:
+            raise ValueError
+        num_periods = db_sc_obj.count('.')
+        if num_periods == 2:
+            db, sc, obj = db_sc_obj.split('.')
+            if not (self.is_unquoted_name(db) or self.is_quoted_name(db)):
+                raise ValueError
+            if not (self.is_unquoted_name(sc) or self.is_quoted_name(sc)):
+                raise ValueError
+            if not (self.is_unquoted_name(obj) or self.is_quoted_name(obj)):
+                raise ValueError
+            return [db, sc, obj]
+        else:
+            print('Need 2 periods - supporting anything else is not implemented')
+            raise ValueError
+    
     def split_db_sc(self, db_sc):
         if '.' not in db_sc:
             raise ValueError

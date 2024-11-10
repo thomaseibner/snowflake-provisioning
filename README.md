@@ -20,6 +20,7 @@ and Warehouses. The second section covers scripted provisioning of functional ro
    1. [Provisioning Functional Role](#provisioning-functional-role)
 1. [Exporting Snowflake Source](#exporting-snowflake-source)
 1. [Cloning tables between schemas](#cloning-tables-between-schemas)
+1. [Tieout comparing data](#tieout-comparing-data)
 1. [TODO](#todo)
 1. [Author](#author)
 1. [Credits](#credits)
@@ -498,6 +499,80 @@ $ ./sf_clone refresh --from_db_sc TEST_DB.SC_1 --to_db_sc TEST_DB.SC_2 --clone_r
 2023-09-10 20:17:50 - INFO - Done
 $
 ```
+
+## Tieout - comparing data
+
+`sf_tieout` is a helper tool that allows you to easily compare data in Snowflake tables/views. It quantifies the differences between the objects and stores the results in tables in Snowflake. Since it compares data between tables/views it is easy to map/translate the contents of a table on the fly through a view. 
+
+It is configured through a simple YAML file and stores the output as summaries in a number of tables. The tool is inspired by [https://medium.com/@alvaroparra/comparing-two-tables-in-snowflake-12455d28606](Alvaro Parra's) article on comparing data between tables. The comparisons take NULLs into account by leveraging the Snowflake [https://docs.snowflake.com/en/sql-reference/functions/equal_null](EQUAL_NULL) function. It also provides [https://docs.snowflake.com/en/sql-reference/functions/jarowinkler_similarity](JAROWINKLER_SIMILARITY) score, [https://docs.snowflake.com/en/sql-reference/functions/editdistance](EDITDISTANCE) value, and [https://docs.snowflake.com/en/sql-reference/functions/soundex](SOUNDEX) comparison for each data validation difference. The tables and views makes it easy to put a [https://streamlit.io/](Streamlit) UI on top of the data. 
+
+The name tieout is paying homeage to EJV's data comparison tool. 
+
+The options for the tool are simple as shown below:
+```
+$ ./sf_tieout --help
+usage: sf_tieout [-h] [--yaml YAML] [--target TARGET] [--detect_duplicate_key] [--log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+
+Snowflake Data Tieout Utility
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --yaml YAML           YAML configuration files
+  --target TARGET       Target key in yaml configuration
+  --detect_duplicate_key
+                        Detect if there are duplicate keys in a table
+  --log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        Log Level to output
+```
+
+The YAML configuration is also simple and allows you to specify any number of targets and any number of data validations within the target. 
+
+```YAML
+<TARGET>:
+    OUTPUT_DB: TEST_DB
+    OUTPUT_SC: PUBLIC
+    OUTPUT_PREFIX: CMP
+    VALIDATIONS:
+        -
+            NAME:         CUSTOMERS
+            KEY:          [ CUSTOMER_KEY ]
+            FROM_TBL:     TEST_DB.PRD.CUSTOMERS
+            TO_TBL:       TEST_DB.DEV.CUSTOMERS
+            IGNORE_COLS:  [ '_IGNORE_THIS_COLUMN' ]
+```
+The role the tool runs under needs `CREATE TABLE` and `CREATE VIEW` privileges on the schema defined in the configuration as well as `SELECT` privilege on the objects it needs to compare. It will create 4 tables and 4 views in output schema:
+
+### <OUTPUT_PREFIX>_1_OVERVIEW
+
+Stores overlapping key rowcount and keys only available in each table. 
+
+### <OUTPUT_PREFIX>_2_COLUMNS_SUMMARY
+
+Column-level summary of data differences where the same column is available in both tables.
+
+### <OUTPUT_PREFIX>_3_COLUMNS_DETAIL
+
+Column-level data differences stored with the keys as json for easy querying. 
+
+### <OUTPUT_PREFIX>_4_COLUMNS_SKIPPED
+
+Columns only available in the from/to table. 
+
+### <OUTPUT_PREFIX>_5_SUM_OVERVIEW
+
+Summary of each validation. 
+
+### <OUTPUT_PREFIX>_6_SUM_COLUMN
+
+Column-level summary of differences / percentages for each data validation. 
+
+### <OUTPUT_PREFIX>_7_SUM_DETAIL
+
+Column-level summary grouped by the from/to value of each column. It allows you to more readily see if a single value is making up the majority of differences. This view also compiles [https://docs.snowflake.com/en/sql-reference/functions/jarowinkler_similarity](JAROWINKLER_SIMILARITY) score, [https://docs.snowflake.com/en/sql-reference/functions/editdistance](EDITDISTANCE) value, and [https://docs.snowflake.com/en/sql-reference/functions/soundex](SOUNDEX) comparison for each grouping. 
+
+### <OUTPUT_PREFIX>_8_SUM_FIELD
+
+Summarized total fields compared/total field difference/percentage difference for each validation. 
 
 ## TODO 
 

@@ -30,6 +30,33 @@ def db_sc_validate(string):
     db_nm,sc_nm = sf_val.split_db_sc(string)
     return [ db_nm, sc_nm ]
 
+def db_sc_obj_validate(string):
+    sf_val = SfValidator()
+    db_nm,sc_nm,obj_nm = sf_val.split_db_sc_obj(string)
+    return [ db_nm, sc_nm, obj_nm ]
+
+class CmdlineParseTieout():
+    def __init__(self):
+        parser = argparse.ArgumentParser(description='Snowflake Data Tieout Utility')
+        parser.add_argument('--yaml', type=str, help='YAML configuration files')
+        parser.add_argument('--target', type=str, help='Target key in yaml configuration')
+        parser.add_argument('--detect_duplicate_key', action='store_true', help='Detect if there are duplicate keys in a table')
+        parser.add_argument('--log_level', type=str, choices=['DEBUG','INFO','WARNING','ERROR','CRITICAL'], default='INFO', help='Log Level to output')        
+        self.parser = parser
+        self.args = parser.parse_args()
+        self.sf_val = SfValidator()
+        self.checkinput()
+
+    def checkinput(self):
+        if self.args.yaml is None:
+            print("YAML file is required")
+            self.parser.print_help()
+            exit(0)
+        if self.args.target is None:
+            print("Target is required")
+            self.parser.print_help()
+            exit(0)
+            
 class CmdlineParseExport():
     def __init__(self):
         parser = argparse.ArgumentParser(description='Snowflake Object Export Utility')
