@@ -504,7 +504,7 @@ $
 
 `sf_tieout` is a helper tool that allows you to easily compare data in Snowflake tables/views. It quantifies the differences between the objects and stores the results in tables in Snowflake. Since it compares data between tables/views it is easy to map/translate the contents of a table on the fly through a view. 
 
-It is configured through a simple YAML file and stores the output as summaries in a number of tables. The tool is inspired by [https://medium.com/@alvaroparra/comparing-two-tables-in-snowflake-12455d28606](Alvaro Parra's) article on comparing data between tables. The comparisons take NULLs into account by leveraging the Snowflake [https://docs.snowflake.com/en/sql-reference/functions/equal_null](EQUAL_NULL) function. It also provides [https://docs.snowflake.com/en/sql-reference/functions/jarowinkler_similarity](JAROWINKLER_SIMILARITY) score, [https://docs.snowflake.com/en/sql-reference/functions/editdistance](EDITDISTANCE) value, and [https://docs.snowflake.com/en/sql-reference/functions/soundex](SOUNDEX) comparison for each data validation difference. The tables and views makes it easy to put a [https://streamlit.io/](Streamlit) UI on top of the data. 
+It is configured through a simple YAML file and stores the output as summaries in a number of tables. The tool is inspired by [Alvaro Parra's](https://medium.com/@alvaroparra/comparing-two-tables-in-snowflake-12455d28606) article on comparing data between tables. The comparisons take NULLs into account by leveraging the Snowflake [EQUAL_NULL](https://docs.snowflake.com/en/sql-reference/functions/equal_null) function. It also provides [JAROWINKLER_SIMILARITY](https://docs.snowflake.com/en/sql-reference/functions/jarowinkler_similarity) score, [EDITDISTANCE](https://docs.snowflake.com/en/sql-reference/functions/editdistance) value, and [SOUNDEX](https://docs.snowflake.com/en/sql-reference/functions/soundex) comparison for each data validation difference. The tables and views makes it easy to put a [Streamlit](https://streamlit.io/) UI on top of the data. 
 
 The name tieout is paying homeage to EJV's data comparison tool. 
 
@@ -568,7 +568,7 @@ Column-level summary of differences / percentages for each data validation.
 
 ### <OUTPUT_PREFIX>_7_SUM_DETAIL
 
-Column-level summary grouped by the from/to value of each column. It allows you to more readily see if a single value is making up the majority of differences. This view also compiles [https://docs.snowflake.com/en/sql-reference/functions/jarowinkler_similarity](JAROWINKLER_SIMILARITY) score, [https://docs.snowflake.com/en/sql-reference/functions/editdistance](EDITDISTANCE) value, and [https://docs.snowflake.com/en/sql-reference/functions/soundex](SOUNDEX) comparison for each grouping. 
+Column-level summary grouped by the from/to value of each column. It allows you to more readily see if a single value is making up the majority of differences. This view also compiles [JAROWINKLER_SIMILARITY](https://docs.snowflake.com/en/sql-reference/functions/jarowinkler_similarity) score, [EDITDISTANCE](https://docs.snowflake.com/en/sql-reference/functions/editdistance) value, and [SOUNDEX](https://docs.snowflake.com/en/sql-reference/functions/soundex) comparison for each grouping. 
 
 ### <OUTPUT_PREFIX>_8_SUM_FIELD
 
