@@ -500,7 +500,7 @@ $ ./sf_clone refresh --from_db_sc TEST_DB.SC_1 --to_db_sc TEST_DB.SC_2 --clone_r
 $
 ```
 
-## Tieout - comparing data
+## Tieout comparing data
 
 `sf_tieout` is a helper tool that allows you to easily compare data in Snowflake tables/views. It quantifies the differences between the objects and stores the results in tables in Snowflake. Since it compares data between tables/views it is easy to map/translate the contents of a table on the fly through a view. 
 
