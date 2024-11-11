@@ -68,7 +68,7 @@ select count(1) from cnt
         dup_row = dup_curs.fetchone()
         dup_keys, = dup_row
         if dup_keys > 0:
-            logger.warning(f"Multiple keys ({dup_keys}) have more than one row in {_from_tbl}")
+            logger.warning(f"Multiple keys of {key_iter_unquoted} ({dup_keys}) have more than one row in {_from_tbl}")
         logger.info(f"Detecting duplicate key(s) in to {_to_tbl}")
         qry = f"""
 with cnt as (
@@ -151,6 +151,7 @@ union
 select 'BOTH' as source, column_name from both
 order by column_name asc
 """
+# This can be removed when Snowflake support confirms fix
 #    shared_keys = f"""
 #shared_keys as (
 #  select {key_iter_unquoted} from {_from_tbl}
@@ -158,10 +159,12 @@ order by column_name asc
 #  select {key_iter_unquoted} from {_to_tbl}
 #)
 #"""
+    shared_keys_list_unqoted = ", ".join(map(lambda x: f"f.{x}", key))
+    shared_keys_list_join = " and ".join(map(lambda x: f"f.{x} = t.{x}", key))
     shared_keys = f"""
 shared_keys as (
-  select f.{key_iter_unquoted} from {_from_tbl} f
-    inner join {_to_tbl} t on f.{key_iter_unquoted} = t.{key_iter_unquoted}
+  select {shared_keys_list_unqoted} from {_from_tbl} f
+    inner join {_to_tbl} t on {shared_keys_list_join} 
 )
 """
     col_curs = sf_conn.run_query(tbl_columns)
