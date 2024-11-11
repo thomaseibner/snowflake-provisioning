@@ -27,6 +27,8 @@ if target not in yaml_cfg.config:
     exit(0)
 config = yaml_cfg.config[target]
 
+CASE_INSENSITIVE = cmdline.args.case_insensitive
+
 output_db     = config['OUTPUT_DB']
 output_sc     = config['OUTPUT_SC']
 output_prefix = config['OUTPUT_PREFIX']
@@ -174,11 +176,14 @@ shared_keys as (
             # this needs to be expanded .. 
             keys_list = " and ".join(map(lambda x: f"t.{x} = f.{x} and s.{x} = t.{x} and s.{x} = f.{x}", key))
             skey_iter_unquoted = ", ".join(map(lambda x: f"s.{x}",key))
+            compare_condition = f"t.{col_nm}, f.{col_nm}"
+            if CASE_INSENSITIVE:
+                compare_condition = f"upper(t.{col_nm}), upper(f.{col_nm})"
             comp_sql = f"""
 with {shared_keys} 
 select count({skey_iter_unquoted}) as diff from shared_keys s, {_from_tbl} f, {_to_tbl} t
  where {keys_list}
-   and NOT(EQUAL_NULL(t.{col_nm}, f.{col_nm}))
+   and NOT(EQUAL_NULL({compare_condition}))
 """
             comp_curs = sf_conn.run_query(comp_sql)
             comp_row = comp_curs.fetchone()
@@ -198,7 +203,7 @@ insert into {output_base}_3_COLUMNS_DETAIL
          object_construct_keep_null({keys_hash}, '__to_val', t.{col_nm}, '__from_val', f.{col_nm}) as data_vals
     from shared_keys s, {_from_tbl} f, {_to_tbl} t
    where {keys_list} 
-     and NOT(EQUAL_NULL(t.{col_nm},f.{col_nm}))
+     and NOT(EQUAL_NULL({compare_condition}))
 """
                 comp_curs = sf_conn.run_query(comp_sql)
                 logger.info(f"{target}:{name}: Column: {col_nm} diff details stored")

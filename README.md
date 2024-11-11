@@ -511,7 +511,7 @@ The name tieout is paying homeage to EJV's data comparison tool.
 The options for the tool are simple as shown below:
 ```
 $ ./sf_tieout --help
-usage: sf_tieout [-h] [--yaml YAML] [--target TARGET] [--detect_duplicate_key] [--log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+usage: sf_tieout [-h] [--yaml YAML] [--target TARGET] [--detect_duplicate_key] [--case_insensitive] [--log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
 
 Snowflake Data Tieout Utility
 
@@ -521,6 +521,7 @@ optional arguments:
   --target TARGET       Target key in yaml configuration
   --detect_duplicate_key
                         Detect if there are duplicate keys in a table
+  --case_insensitive    Perform case-insensitive comparisons
   --log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         Log Level to output
 ```
