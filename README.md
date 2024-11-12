@@ -511,7 +511,7 @@ The name tieout is paying homeage to EJV's data comparison tool.
 The options for the tool are simple as shown below:
 ```
 $ ./sf_tieout --help
-usage: sf_tieout [-h] [--yaml YAML] [--target TARGET] [--detect_duplicate_key] [--case_insensitive] [--log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+usage: sf_tieout [-h] [--yaml YAML] [--target TARGET] [--detect_duplicate_key] [--case_insensitive] [--treat_null_as_blank] [--log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
 
 Snowflake Data Tieout Utility
 
@@ -522,9 +522,13 @@ optional arguments:
   --detect_duplicate_key
                         Detect if there are duplicate keys in a table
   --case_insensitive    Perform case-insensitive comparisons
+  --treat_null_as_blank
+                        Treat NULL as a blank string for comparisons
   --log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         Log Level to output
 ```
+
+The option to treat NULL as blank ('') does currently not work on datetime/timestamp fields. If it is important to compare those types of fields don't use this option.
 
 The YAML configuration is also simple and allows you to specify any number of targets and any number of data validations within the target. 
 

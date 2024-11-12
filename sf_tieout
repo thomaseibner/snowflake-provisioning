@@ -21,13 +21,14 @@ target      = cmdline.args.target
 
 # assume that target is a dict in yaml_config
 if target not in yaml_cfg.config:
-    logger.error(f"{target} not a target in yaml file: {yaml_file}")
+    logger.error(f"{target} not a target in yaml file: {cmdline.args.yaml}")
     targets = '"' + '", "'.join(yaml_cfg.config.keys()) + '"'
     logger.error(f"Targets available: {targets}")
     exit(0)
 config = yaml_cfg.config[target]
 
 CASE_INSENSITIVE = cmdline.args.case_insensitive
+treat_null_as_blank = cmdline.args.treat_null_as_blank
 
 output_db     = config['OUTPUT_DB']
 output_sc     = config['OUTPUT_SC']
@@ -177,14 +178,19 @@ shared_keys as (
             keys_list = " and ".join(map(lambda x: f"t.{x} = f.{x} and s.{x} = t.{x} and s.{x} = f.{x}", key))
             skey_iter_unquoted = ", ".join(map(lambda x: f"s.{x}",key))
             compare_condition = f"t.{col_nm}, f.{col_nm}"
-            if CASE_INSENSITIVE:
+            if CASE_INSENSITIVE and treat_null_as_blank:
+                compare_condition = f"upper(ifnull(t.{col_nm}, '')), upper(ifnull(f.{col_nm}, ''))"
+            elif CASE_INSENSITIVE:
                 compare_condition = f"upper(t.{col_nm}), upper(f.{col_nm})"
+            elif treat_null_as_blank:
+                compare_condition = f"ifnull(t.{col_nm}, ''), ifnull(f.{col_nm}, '')"  
             comp_sql = f"""
 with {shared_keys} 
 select count({skey_iter_unquoted}) as diff from shared_keys s, {_from_tbl} f, {_to_tbl} t
  where {keys_list}
    and NOT(EQUAL_NULL({compare_condition}))
 """
+            # Skip this one if it fails and move to the next key?
             comp_curs = sf_conn.run_query(comp_sql)
             comp_row = comp_curs.fetchone()
             diff, = comp_row

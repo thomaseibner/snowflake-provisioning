@@ -42,6 +42,7 @@ class CmdlineParseTieout():
         parser.add_argument('--target', type=str, help='Target key in yaml configuration')
         parser.add_argument('--detect_duplicate_key', action='store_true', help='Detect if there are duplicate keys in a table')
         parser.add_argument('--case_insensitive', action='store_true', help='Perform case-insensitive comparisons')
+        parser.add_argument('--treat_null_as_blank', action='store_true', help='Treat NULL as a blank string for comparisons')
         parser.add_argument('--log_level', type=str, choices=['DEBUG','INFO','WARNING','ERROR','CRITICAL'], default='INFO', help='Log Level to output')        
         self.parser = parser
         self.args = parser.parse_args()
